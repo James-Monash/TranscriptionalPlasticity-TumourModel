@@ -1,0 +1,29 @@
+{
+  "simulation": {
+    "generations": 10000,
+    "initial_size": 1,
+    "output_dir": "./output",
+    "output_prefix": "proportional_drug",
+    "track_history": true
+  },
+  "biological_parameters": {
+    "s": 0.05,
+    "u": 0.000001,
+    "pq": 0.000001,
+    "pr": 0.000001,
+    "ps": 0.000001,
+    "idle": 0
+  },
+  "treatment": {
+    "schedule_type": "mtd",
+    "drug_type": "prop",
+    "treat_amt": 0.8,
+    "pen_amt": 3.0,
+    "dose_duration": 24,
+    "treatment_start_size": 1000000000,
+    "relapse_size": 4000000000,
+    "penalty": true,
+    "secondary_therapy": false,
+    "secondary_therapy_type": "plast"
+  }
+}

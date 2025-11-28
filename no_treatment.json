@@ -1,0 +1,26 @@
+{
+  "simulation": {
+    "generations": 10000,
+    "initial_size": 1,
+    "output_dir": "./output",
+    "output_prefix": "no_treatment",
+    "track_history": false
+  },
+  "biological_parameters": {
+    "s": 0.01,
+    "u": 0.0000005,
+    "pq": 0.0000005,
+    "pr": 0.0000005,
+    "ps": 0.0000005,
+    "idle": 0.1
+  },
+  "treatment": {
+    "schedule_type": "off",
+    "drug_type": "abs",
+    "treat_amt": 0.8,
+    "pen_amt": 4.0,
+    "dose_duration": 24,
+    "penalty": true,
+    "secondary_therapy": false
+  }
+}
