@@ -9,7 +9,7 @@ Handles:
 """
 
 import numpy as np
-import pandas as pd
+import pandas
 from typing import Dict, Optional, Tuple, List
 from enum import Enum
 
@@ -115,29 +115,29 @@ class Treatment:
         rows = []
         for k in k_list:
             # Death probability increases with mutations
-            pd = ((1 - self.base_idle) / 2) * (1 - self.base_s) ** k
-            pnd = 1 - self.base_idle - pd
+            prob_death = ((1 - self.base_idle) / 2) * (1 - self.base_s) ** k
+            prob_no_death = 1 - self.base_idle - prob_death
             
             # Birth and transition probabilities
-            pb_pure = pnd * (1 - self.base_u)
-            pm = pnd * self.base_u
-            pq = pnd * self.base_pq
-            pr = pnd * self.base_pr
-            ps = pnd * self.base_ps
+            prob_birth_pure = prob_no_death * (1 - self.base_u)
+            prob_mutation = prob_no_death * self.base_u
+            prob_to_quasi = prob_no_death * self.base_pq
+            prob_to_resistant = prob_no_death * self.base_pr
+            prob_to_sensitive = prob_no_death * self.base_ps
             
             rows.append({
                 'k': k,
-                'pnd': self.base_idle,
-                'pb': pb_pure,
-                'pd': pd,
-                'pm': pm,
-                'pq': pq,
-                'pr': pr,
-                'ps': ps
+                'prob_idle': self.base_idle,
+                'prob_birth': prob_birth_pure,
+                'prob_death': prob_death,
+                'prob_mutation': prob_mutation,
+                'prob_to_quasi': prob_to_quasi,
+                'prob_to_resistant': prob_to_resistant,
+                'prob_to_sensitive': prob_to_sensitive
             })
         
-        self.prob_table = pd.DataFrame(rows)
-    
+        self.prob_table = pandas.DataFrame(rows)
+
     def get_base_probabilities(self, k: int) -> Dict[str, float]:
         """
         Get base probabilities for a clone with k driver mutations.
@@ -157,13 +157,13 @@ class Treatment:
         
         row = self.prob_table.loc[k]
         return {
-            'pnd': row['pnd'],
-            'pb': row['pb'],
-            'pdd': row['pd'],
-            'pm': row['pm'],
-            'pq': row['pq'],
-            'pr': row['pr'],
-            'ps': row['ps']
+            'prob_idle': row['prob_idle'],
+            'prob_birth': row['prob_birth'],
+            'prob_death': row['prob_death'],
+            'prob_mutation': row['prob_mutation'],
+            'prob_to_quasi': row['prob_to_quasi'],
+            'prob_to_resistant': row['prob_to_resistant'],
+            'prob_to_sensitive': row['prob_to_sensitive']
         }
     
     def update_treatment_state(self, tumor_size: int, generation: int):
@@ -328,20 +328,20 @@ class Treatment:
         # Primary therapy effect
         if self.drug_type == DrugType.ABSOLUTE:
             # Absolute drug: death rate moves toward treat_amt
-            probs['pdd'] = probs['pdd'] + (self.treat_amt - probs['pdd']) * conc1
-            probs['pb'] = 1 - probs['pdd'] - probs['pm'] - probs['pq'] - probs['pr'] - probs['pnd']
+            probs['prob_death'] = probs['prob_death'] + (self.treat_amt - probs['prob_death']) * conc1
+            probs['prob_birth'] = 1 - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_quasi'] - probs['prob_to_resistant'] - probs['prob_idle']
         
         elif self.drug_type == DrugType.PROPORTIONAL:
             # Proportional drug: death increases based on growth rate
-            diff = min(((probs['pb'] - probs['pdd']) * 3 * conc1), 0.9 * probs['pb'])
-            probs['pb'] = probs['pb'] - diff
-            probs['pdd'] = probs['pdd'] + diff
+            diff = min(((probs['prob_birth'] - probs['prob_death']) * 3 * conc1), 0.9 * probs['prob_birth'])
+            probs['prob_birth'] = probs['prob_birth'] - diff
+            probs['prob_death'] = probs['prob_death'] + diff
         
         # Secondary therapy (plasticity modulation)
         if self.secondary_active and conc2 > 0:
             # Increase quiescence, decrease resistance acquisition
-            probs['pnd'] = probs['pnd'] + probs['pq'] * conc2
-            probs['pq'] = probs['pq'] - probs['pq'] * conc2
+            probs['prob_idle'] = probs['prob_idle'] + probs['prob_to_quasi'] * conc2
+            probs['prob_to_quasi'] = probs['prob_to_quasi'] - probs['prob_to_quasi'] * conc2
         
         return probs
     
@@ -356,22 +356,22 @@ class Treatment:
             return probs
         
         # Primary therapy: partial protection via penalty amount
-        diff = (probs['pb'] - probs['pdd']) * conc1
-        probs['pb'] = probs['pb'] + diff / self.pen_amt
-        probs['pdd'] = probs['pdd'] - diff / self.pen_amt
+        diff = (probs['prob_birth'] - probs['prob_death']) * conc1
+        probs['prob_birth'] = probs['prob_birth'] + diff / self.pen_amt
+        probs['prob_death'] = probs['prob_death'] - diff / self.pen_amt
         
         # Secondary therapy: promote reversion to sensitive
         if self.secondary_active and conc2 > 0:
             if self.secondary_therapy_type == "plast":
                 # Type A: force out of quiescence, increase reversion
-                probs['pnd'] = probs['pnd'] - 2 * probs['pq'] * conc2
-                probs['pq'] = probs['pq'] + 2 * probs['pq'] * conc2
+                probs['prob_idle'] = probs['prob_idle'] - 2 * probs['prob_to_quasi'] * conc2
+                probs['prob_to_quasi'] = probs['prob_to_quasi'] + 2 * probs['prob_to_quasi'] * conc2
             else:
                 # Type B: induce dormancy and reversion
-                red = min(probs['pb'] - 0.01, probs['pdd'] - 0.01, 0.1)
-                probs['pb'] = probs['pb'] - red * conc2
-                probs['pdd'] = probs['pdd'] - red * conc2
-                probs['pq'] = probs['pq'] + 2 * red * conc2
+                red = min(probs['prob_birth'] - 0.01, probs['prob_death'] - 0.01, 0.1)
+                probs['prob_birth'] = probs['prob_birth'] - red * conc2
+                probs['prob_death'] = probs['prob_death'] - red * conc2
+                probs['prob_to_quasi'] = probs['prob_to_quasi'] + 2 * red * conc2
         
         return probs
     
@@ -386,9 +386,9 @@ class Treatment:
             return probs
         
         # Primary therapy: partial protection via penalty amount
-        diff = (probs['pb'] - probs['pdd']) * conc1
-        probs['pb'] = probs['pb'] + diff / self.pen_amt
-        probs['pdd'] = probs['pdd'] - diff / self.pen_amt
+        diff = (probs['prob_birth'] - probs['prob_death']) * conc1
+        probs['prob_birth'] = probs['prob_birth'] + diff / self.pen_amt
+        probs['prob_death'] = probs['prob_death'] - diff / self.pen_amt
         
         # Secondary therapy has no effect on resistant cells
         
@@ -401,9 +401,9 @@ class Treatment:
         conc1: float
     ) -> Dict[str, float]:
         """Apply fitness penalty to resistant/quasi cells without treatment."""
-        diff = (probs['pb'] - probs['pdd']) * conc1
-        probs['pb'] = probs['pb'] - diff / (self.pen_amt + 1)
-        probs['pdd'] = probs['pdd'] + diff / (self.pen_amt + 1)
+        diff = (probs['prob_birth'] - probs['prob_death']) * conc1
+        probs['prob_birth'] = probs['prob_birth'] - diff / (self.pen_amt + 1)
+        probs['prob_death'] = probs['prob_death'] + diff / (self.pen_amt + 1)
         return probs
     
     def get_state_summary(self) -> Dict:

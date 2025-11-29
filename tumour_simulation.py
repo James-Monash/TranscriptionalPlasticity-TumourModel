@@ -181,38 +181,51 @@ class TumourSimulation:
         """
         # Track new clones created this generation (to avoid modifying dict during iteration)
         new_clones = []
-        
+
+        import pprint
+        print(f"\n--- Generation {self.current_generation} ---")
         for clone in list(self.clones.clones.values()):
             if clone.is_extinct():
                 continue
-            
+            print(f"\nClone ID {clone.clone_id} (Gen {clone.generation}): S={clone.n_sensitive}, Q={clone.n_quasi}, R={clone.n_resistant}")
             # Simulate sensitive cells
             if clone.n_sensitive > 0:
+                probs_s = self.treatment.calculate_probabilities(clone.generation, "S")
+                print("  Sensitive cell probabilities:")
+                pprint.pprint(probs_s)
                 deltas_s, mutations_s = self._simulate_cell_population(
                     clone, "S", clone.n_sensitive
                 )
+                print(f"    S deltas: {deltas_s}")
                 clone.update_counts(delta_sensitive=deltas_s['net_change'])
                 new_clones.extend(mutations_s)
-            
             # Simulate quasi-resistant cells
             if clone.n_quasi > 0:
+                probs_q = self.treatment.calculate_probabilities(clone.generation, "Q")
+                print("  Quasi cell probabilities:")
+                pprint.pprint(probs_q)
                 deltas_q, mutations_q = self._simulate_cell_population(
                     clone, "Q", clone.n_quasi
                 )
+                print(f"    Q deltas: {deltas_q}")
                 clone.update_counts(delta_quasi=deltas_q['net_change'])
                 new_clones.extend(mutations_q)
-            
             # Simulate resistant cells
             if clone.n_resistant > 0:
+                probs_r = self.treatment.calculate_probabilities(clone.generation, "R")
+                print("  Resistant cell probabilities:")
+                pprint.pprint(probs_r)
                 deltas_r, mutations_r = self._simulate_cell_population(
                     clone, "R", clone.n_resistant
                 )
+                print(f"    R deltas: {deltas_r}")
                 clone.update_counts(delta_resistant=deltas_r['net_change'])
                 new_clones.extend(mutations_r)
-            
+            # Show updated cell counts after all events
+            print(f"  Updated: S={clone.n_sensitive}, Q={clone.n_quasi}, R={clone.n_resistant}")
             # Apply state transitions between S, Q, R
             self._apply_state_transitions(clone)
-        
+            
         # Add newly created clones
         for new_clone in new_clones:
             self.clones.clones[new_clone.clone_id] = new_clone
@@ -246,12 +259,12 @@ class TumourSimulation:
         # Sample cell fates using multinomial distribution
         # Outcomes: idle, birth, death, mutation, transitions
         fate_probs = [
-            probs['pnd'],  # idle
-            probs['pb'],   # birth
-            probs['pdd'],  # death
-            probs['pm'],   # mutation (creates new clone)
-            probs['pq'],   # transition to Q (or revert to S if Q)
-            probs['pr']    # transition to R
+            probs['prob_idle'],  # idle
+            probs['prob_birth'],   # birth
+            probs['prob_death'],  # death
+            probs['prob_mutation'],   # mutation (creates new clone)
+            probs['prob_to_quasi'],   # transition to Q (or revert to S if Q)
+            probs['prob_to_resistant']    # transition to R
         ]
         
         # Ensure probabilities sum to 1 (numerical stability)
@@ -313,8 +326,8 @@ class TumourSimulation:
         
         # S -> Q transitions
         if clone.n_sensitive > 0:
-            n_s_to_q = np.random.binomial(clone.n_sensitive, probs_s['pq'])
-            n_s_to_r = np.random.binomial(clone.n_sensitive - n_s_to_q, probs_s['pr'])
+            n_s_to_q = np.random.binomial(clone.n_sensitive, probs_s['prob_to_quasi'])
+            n_s_to_r = np.random.binomial(clone.n_sensitive - n_s_to_q, probs_s['prob_to_resistant'])
             
             clone.n_sensitive -= (n_s_to_q + n_s_to_r)
             clone.n_quasi += n_s_to_q
@@ -322,9 +335,9 @@ class TumourSimulation:
         
         # Q -> S (reversion) and Q -> R transitions
         if clone.n_quasi > 0:
-            # Note: probs_q['pq'] represents reversion rate for quasi cells
-            n_q_to_s = np.random.binomial(clone.n_quasi, probs_q['pq'])
-            n_q_to_r = np.random.binomial(clone.n_quasi - n_q_to_s, probs_q['pr'])
+            # Note: probs_q['prob_to_quasi'] represents reversion rate for quasi cells
+            n_q_to_s = np.random.binomial(clone.n_quasi, probs_q['prob_to_quasi'])
+            n_q_to_r = np.random.binomial(clone.n_quasi - n_q_to_s, probs_q['prob_to_resistant'])
             
             clone.n_quasi -= (n_q_to_s + n_q_to_r)
             clone.n_sensitive += n_q_to_s

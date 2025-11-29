@@ -290,17 +290,17 @@ def test_treatment_class():
     # Test probability calculation
     probs_s = treatment.calculate_probabilities(k=1, cell_type="S")
     print(f"Sensitive cell probabilities (no treatment):")
-    print(f"  pnd: {probs_s['pnd']:.6f}")
-    print(f"  pb: {probs_s['pb']:.6f}")
-    print(f"  pdd: {probs_s['pdd']:.6f}")
+    print(f"  prob_idle: {probs_s['prob_idle']:.6f}")
+    print(f"  prob_birth: {probs_s['prob_birth']:.6f}")
+    print(f"  prob_death: {probs_s['prob_death']:.6f}")
     
     # Activate treatment
     treatment.update_treatment_state(tumor_size=5000, generation=10)
     probs_s_treated = treatment.calculate_probabilities(k=1, cell_type="S")
     print(f"\nSensitive cell probabilities (with treatment):")
-    print(f"  pnd: {probs_s_treated['pnd']:.6f}")
-    print(f"  pb: {probs_s_treated['pb']:.6f}")
-    print(f"  pdd: {probs_s_treated['pdd']:.6f}")
+    print(f"  prob_idle: {probs_s_treated['prob_idle']:.6f}")
+    print(f"  prob_birth: {probs_s_treated['prob_birth']:.6f}")
+    print(f"  prob_death: {probs_s_treated['prob_death']:.6f}")
     
     # Test concentration
     conc1, conc2 = treatment.get_drug_concentration()
