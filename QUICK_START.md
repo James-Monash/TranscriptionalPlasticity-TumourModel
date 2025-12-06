@@ -66,10 +66,10 @@ config = {
     },
     "biological_parameters": {
         "s": 0.01,
-        "u": 0.0000005,
-        "pq": 0.0000005,
-        "pr": 0.0000005,
-        "ps": 0.0000005,
+        "m": 0.0000005,
+        "q": 0.0000005,
+        "r": 0.0000005,
+        "l": 0.0000005,
         "idle": 0.1
     },
     "treatment": {
@@ -177,7 +177,7 @@ state, results = sim.run()
 ```python
 import pandas as pd
 
-results = pd.read_csv("output/my_simulation_s0.01_u5e-07_state2_20251128_123456.csv")
+results = pd.read_csv("output/my_simulation_s0.01_m5e-07_state2_20251128_123456.csv")
 
 print(f"Total cells: {results['N'].sum()}")
 print(f"Sensitive cells: {results['Ns'].sum()}")
@@ -254,10 +254,10 @@ for treat_amt in treat_amts:
             },
             "biological_parameters": {
                 "s": 0.01,
-                "u": 0.0000005,
-                "pq": 0.0000005,
-                "pr": 0.0000005,
-                "ps": 0.0000005,
+                "m": 0.0000005,
+                "q": 0.0000005,
+                "r": 0.0000005,
+                "l": 0.0000005,
                 "idle": 0.1
             },
             "treatment": {
@@ -338,8 +338,8 @@ This will run 5 test cases and create output in `./test_output/`.
 
 ### Biological Parameters (typical values)
 - `s`: 0.01 - 0.05 (selective advantage)
-- `u`: 1e-7 - 1e-5 (mutation rate)
-- `pq`, `pr`, `ps`: 1e-7 - 1e-5 (transition rates)
+- `m`: 1e-7 - 1e-5 (mutation rate)
+- `q`, `r`, `l`: 1e-7 - 1e-5 (transition rates)
 - `idle`: 0 - 0.2 (quiescence)
 
 ### Treatment Parameters (typical values)

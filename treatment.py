@@ -56,7 +56,7 @@ class Treatment:
         config : dict
             Treatment configuration from JSON
         base_params : dict
-            Base biological parameters (s, u, pq, pr, ps, idle)
+            Base biological parameters (s, m, q, r, l, idle)
         """
         # Treatment schedule parameters
         self.schedule_type = ScheduleType(config.get('schedule_type', 'off'))
@@ -82,13 +82,13 @@ class Treatment:
         # Penalty (fitness cost without treatment)
         self.penalty_enabled = config.get('penalty', False)
         
-        # Base parameters
-        self.base_s = base_params['s']
-        self.base_u = base_params['u']
-        self.base_pq = base_params['pq']
-        self.base_pr = base_params['pr']
-        self.base_ps = base_params['ps']
-        self.base_idle = base_params['idle']
+        # Base parameters 
+        self.base_s = base_params['s'] # selective advantage 
+        self.base_m = base_params['m'] # mutation rate
+        self.base_q = base_params['q'] # rate of transient resistance gain 
+        self.base_r = base_params['r'] # rate of permanent resistance gain
+        self.base_l = base_params['l'] # rate of transient resistance loss
+        self.base_idle = base_params['idle'] # baseline quiescence rate
         
         # State variables
         self.current_generation = 0
@@ -110,25 +110,26 @@ class Treatment:
         This creates a lookup table of probabilities based on the number
         of driver mutations (k) a clone has acquired.
         """
-        k_list = list(range(0, 50))
+        k_list = list(range(1, 50)) # The first cell is considered to have 1 driver mutation
         
         rows = []
         for k in k_list:
-            # Death probability increases with mutations
+            # Death probability decreases with mutations (selective advantage)
             prob_death = ((1 - self.base_idle) / 2) * (1 - self.base_s) ** k
-            prob_no_death = 1 - self.base_idle - prob_death
             
-            # Birth and transition probabilities
-            prob_birth_pure = prob_no_death * (1 - self.base_u)
-            prob_mutation = prob_no_death * self.base_u
-            prob_to_quasi = prob_no_death * self.base_pq
-            prob_to_resistant = prob_no_death * self.base_pr
-            prob_to_sensitive = prob_no_death * self.base_ps
+            # Mutation and transition probabilities (scaled by survival)
+            prob_mutation = self.base_m * (1 - prob_death) # probability of developing a new driver mutation
+            prob_to_quasi = self.base_q * (1 - prob_death) # probability of transient resistance gain
+            prob_to_resistant = self.base_r * (1 - prob_death) # probability of permanent resistance gain
+            prob_to_sensitive = self.base_l * (1 - prob_death) # probability of transient resistance loss
+            
+            # Birth probability is remainder
+            prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_quasi - prob_to_resistant - prob_to_sensitive
             
             rows.append({
                 'k': k,
                 'prob_idle': self.base_idle,
-                'prob_birth': prob_birth_pure,
+                'prob_birth': prob_birth,
                 'prob_death': prob_death,
                 'prob_mutation': prob_mutation,
                 'prob_to_quasi': prob_to_quasi,
@@ -138,9 +139,33 @@ class Treatment:
         
         self.prob_table = pandas.DataFrame(rows)
 
+    def _extend_probability_table(self, new_k: int):
+        """
+        Extend the probability table up to new_k (inclusive).
+        """
+        current_max_k = self.prob_table['k'].max()
+        for k in range(int(current_max_k) + 1, new_k + 1):
+            prob_death = ((1 - self.base_idle) / 2) * (1 - self.base_s) ** k
+            prob_mutation = self.base_m * (1 - prob_death)
+            prob_to_quasi = self.base_q * (1 - prob_death)
+            prob_to_resistant = self.base_r * (1 - prob_death)
+            prob_to_sensitive = self.base_l * (1 - prob_death)
+            prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_quasi - prob_to_resistant - prob_to_sensitive
+            self.prob_table.loc[len(self.prob_table)] = {
+                'k': k,
+                'prob_idle': self.base_idle,
+                'prob_birth': prob_birth,
+                'prob_death': prob_death,
+                'prob_mutation': prob_mutation,
+                'prob_to_quasi': prob_to_quasi,
+                'prob_to_resistant': prob_to_resistant,
+                'prob_to_sensitive': prob_to_sensitive
+            }
+
     def get_base_probabilities(self, k: int) -> Dict[str, float]:
         """
         Get base probabilities for a clone with k driver mutations.
+        Extends the probability table if k is greater than current table size.
         
         Parameters:
         -----------
@@ -152,10 +177,11 @@ class Treatment:
         dict
             Dictionary of base probabilities
         """
-        if k >= len(self.prob_table):
-            k = len(self.prob_table) - 1
-        
-        row = self.prob_table.loc[k]
+        if k > len(self.prob_table):
+            self._extend_probability_table(k)
+
+        # Use iloc to access by position (k=1 → index 0, k=2 → index 1, etc.)
+        row = self.prob_table.iloc[k - 1]
         return {
             'prob_idle': row['prob_idle'],
             'prob_birth': row['prob_birth'],
@@ -282,6 +308,13 @@ class Treatment:
         """
         Calculate branching probabilities for a cell type under current treatment.
         
+        The set of available actions for each cell at a fixed time step is dependent 
+        on the current state of the cell:
+        - If a cell is currently sensitive, it cannot take the quasi resistant to sensitive option
+        - If a cell is currently quasi resistant, it cannot take the sensitive to quasi resistant option
+        - If a cell currently has permanent resistance, it cannot take the sensitive to quasi 
+          resistant or the quasi resistant to sensitive option
+        
         Parameters:
         -----------
         k : int
@@ -292,26 +325,52 @@ class Treatment:
         Returns:
         --------
         dict
-            Dictionary with probabilities: pnd, pb, pdd, pm, pq, pr, ps
+            Dictionary with probabilities: prob_idle, prob_birth, prob_death, prob_mutation,
+            prob_to_quasi, prob_to_resistant, prob_to_sensitive
         """
         # Get base probabilities
         probs = self.get_base_probabilities(k)
         
+        # Zero out impossible transitions based on current cell type
+        if cell_type == "S":
+            # Sensitive cells can't lose quasi-resistance (they don't have it)
+            probs['prob_to_sensitive'] = 0.0
+        elif cell_type == "Q":
+            # Quasi cells can't gain quasi-resistance (they already have it)
+            probs['prob_to_quasi'] = 0.0
+        elif cell_type == "R":
+            # Resistant cells can't gain or lose quasi-resistance or gain more resistance (permanent resistance)
+            probs['prob_to_quasi'] = 0.0
+            probs['prob_to_sensitive'] = 0.0
+            probs['prob_to_resistant'] = 0.0
+        
+        # Rebalance birth probability after zeroing impossible transitions
+        # Birth probability is the remainder after all other events
+        probs['prob_birth'] = 1.0 - probs['prob_idle'] - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_quasi'] - probs['prob_to_resistant'] - probs['prob_to_sensitive']
+        
         # Get drug concentrations
         conc1, conc2 = self.get_drug_concentration()
+
+        if self.treatment_active:
         
-        # Apply treatment effects based on cell type
-        if cell_type == "S":
-            probs = self._apply_treatment_to_sensitive(probs, conc1, conc2)
-        elif cell_type == "Q":
-            probs = self._apply_treatment_to_quasi(probs, conc1, conc2)
-        elif cell_type == "R":
-            probs = self._apply_treatment_to_resistant(probs, conc1, conc2)
+            # Apply treatment effects based on cell type
+            if cell_type == "S":
+                probs = self._apply_treatment_to_sensitive(probs, conc1, conc2)
+            elif cell_type == "Q":
+                probs = self._apply_treatment_to_quasi(probs, conc1, conc2)
+            elif cell_type == "R":
+                probs = self._apply_treatment_to_resistant(probs, conc1, conc2)
         
         # Apply penalty if enabled and no treatment
         if self.penalty_enabled and not self.treatment_active:
             if cell_type in ["Q", "R"]:
                 probs = self._apply_penalty(probs, cell_type, conc1)
+   
+        # Normalize to ensure sum is exactly 1.0
+        total = sum(probs.values())
+        if total > 0:
+            for key in probs:
+                probs[key] /= total
         
         return probs
     
@@ -322,14 +381,12 @@ class Treatment:
         conc2: float
     ) -> Dict[str, float]:
         """Apply primary and secondary therapy effects to sensitive cells."""
-        if not self.treatment_active:
-            return probs
         
         # Primary therapy effect
         if self.drug_type == DrugType.ABSOLUTE:
             # Absolute drug: death rate moves toward treat_amt
             probs['prob_death'] = probs['prob_death'] + (self.treat_amt - probs['prob_death']) * conc1
-            probs['prob_birth'] = 1 - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_quasi'] - probs['prob_to_resistant'] - probs['prob_idle']
+            probs['prob_birth'] = 1 - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_quasi'] - probs['prob_to_resistant'] - probs['prob_idle'] - probs['prob_to_sensitive']
         
         elif self.drug_type == DrugType.PROPORTIONAL:
             # Proportional drug: death increases based on growth rate
@@ -352,8 +409,6 @@ class Treatment:
         conc2: float
     ) -> Dict[str, float]:
         """Apply primary and secondary therapy effects to quasi-resistant cells."""
-        if not self.treatment_active:
-            return probs
         
         # Primary therapy: partial protection via penalty amount
         diff = (probs['prob_birth'] - probs['prob_death']) * conc1
@@ -363,15 +418,17 @@ class Treatment:
         # Secondary therapy: promote reversion to sensitive
         if self.secondary_active and conc2 > 0:
             if self.secondary_therapy_type == "plast":
-                # Type A: force out of quiescence, increase reversion
-                probs['prob_idle'] = probs['prob_idle'] - 2 * probs['prob_to_quasi'] * conc2
-                probs['prob_to_quasi'] = probs['prob_to_quasi'] + 2 * probs['prob_to_quasi'] * conc2
+                # Type A: force out of quiescence, increase reversion to sensitive
+                # Note: prob_to_quasi is already 0 for Q cells, so we work with prob_to_sensitive instead
+                prob_to_sensitive_boost = 2 * self.base_q * conc2
+                probs['prob_idle'] = max(0, probs['prob_idle'] - prob_to_sensitive_boost)
+                probs['prob_to_sensitive'] = probs['prob_to_sensitive'] + prob_to_sensitive_boost
             else:
                 # Type B: induce dormancy and reversion
                 red = min(probs['prob_birth'] - 0.01, probs['prob_death'] - 0.01, 0.1)
                 probs['prob_birth'] = probs['prob_birth'] - red * conc2
                 probs['prob_death'] = probs['prob_death'] - red * conc2
-                probs['prob_to_quasi'] = probs['prob_to_quasi'] + 2 * red * conc2
+                probs['prob_to_sensitive'] = probs['prob_to_sensitive'] + 2 * red * conc2
         
         return probs
     
@@ -382,8 +439,6 @@ class Treatment:
         conc2: float
     ) -> Dict[str, float]:
         """Apply primary therapy effects to resistant cells."""
-        if not self.treatment_active:
-            return probs
         
         # Primary therapy: partial protection via penalty amount
         diff = (probs['prob_birth'] - probs['prob_death']) * conc1

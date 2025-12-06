@@ -29,7 +29,8 @@ class Clone:
         generation: int,
         n_sensitive: int = 0,
         n_quasi: int = 0,
-        n_resistant: int = 0
+        n_resistant: int = 0,
+        n_driver_mutations: int = 1
     ):
         """
         Initialize a clone.
@@ -55,12 +56,11 @@ class Clone:
         self.parent_id = parent_id
         self.parent_type = parent_type
         self.generation = generation
-        
+        self.n_driver_mutations = n_driver_mutations
         # Cell counts by type
         self.n_sensitive = n_sensitive
         self.n_quasi = n_quasi
         self.n_resistant = n_resistant
-        
         # Tracking history 
         self.history = {
             'n_sensitive': [],
@@ -96,12 +96,7 @@ class Clone:
         self.n_sensitive += delta_sensitive
         self.n_quasi += delta_quasi
         self.n_resistant += delta_resistant
-        
-        # Ensure non-negative
-        self.n_sensitive = max(0, self.n_sensitive)
-        self.n_quasi = max(0, self.n_quasi)
-        self.n_resistant = max(0, self.n_resistant)
-    
+            
     def record_history(self, generation: int):
         """
         Record current state to history.
@@ -156,6 +151,8 @@ class CloneCollection:
         """Initialize empty clone collection."""
         self.clones: Dict[int, Clone] = {}
         self.next_id = 0
+        # Track unique driver mutation counts (once added, never removed)
+        self.unique_driver_mutations: set = set()
     
     def add_clone(
         self,
@@ -164,7 +161,8 @@ class CloneCollection:
         generation: int,
         n_sensitive: int = 0,
         n_quasi: int = 0,
-        n_resistant: int = 0
+        n_resistant: int = 0,
+        n_driver_mutations: int = 1
     ) -> Clone:
         """
         Add a new clone to the collection.
@@ -183,6 +181,8 @@ class CloneCollection:
             Initial quasi-resistant cells
         n_resistant : int
             Initial resistant cells
+        n_driver_mutations : int
+            Number of driver mutations in this clone
             
         Returns:
         --------
@@ -196,9 +196,11 @@ class CloneCollection:
             generation=generation,
             n_sensitive=n_sensitive,
             n_quasi=n_quasi,
-            n_resistant=n_resistant
+            n_resistant=n_resistant,
+            n_driver_mutations=n_driver_mutations
         )
         self.clones[self.next_id] = clone
+        self.unique_driver_mutations.add(n_driver_mutations)
         self.next_id += 1
         return clone
     
@@ -226,6 +228,10 @@ class CloneCollection:
         ]
         for clone_id in extinct_ids:
             del self.clones[clone_id]
+    
+    def get_unique_driver_mutations(self) -> set:
+        """Get set of unique driver mutation counts across all clones."""
+        return self.unique_driver_mutations
     
     def get_total_cells(self) -> int:
         """Get total number of cells across all clones."""

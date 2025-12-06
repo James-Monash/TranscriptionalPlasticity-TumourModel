@@ -1,0 +1,117 @@
+{
+  "simulations": [
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 100,
+            "output_dir": "./output",
+            "output_prefix": "multi_replicate",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true
+            }
+        },
+        "biological_parameters": {
+            "s": 0.01,
+            "m": 6.13e-07,
+            "q": 1.80e-07,
+            "r": 0,
+            "l": 9.0e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 100,
+            "output_dir": "./output",
+            "output_prefix": "multi_replicate",
+            "track_history": false,
+            "number_of_replicates": 100
+        },
+        "biological_parameters": {
+            "s": 0.01,
+            "m": 6.13e-07,
+            "q": 1.80e-07,
+            "r": 0,
+            "l": 1.8e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 100,
+            "output_dir": "./output",
+            "output_prefix": "multi_replicate",
+            "track_history": false,
+            "number_of_replicates": 100
+        },
+        "biological_parameters": {
+            "s": 0.01,
+            "m": 6.13e-07,
+            "q": 1.80e-07,
+            "r": 0,
+            "l": 4.5e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 100,
+            "output_dir": "./output",
+            "output_prefix": "multi_replicate",
+            "track_history": false,
+            "number_of_replicates": 100
+        },
+        "biological_parameters": {
+            "s": 0.01,
+            "m": 6.13e-07,
+            "q": 1.80e-07,
+            "r": 0,
+            "l": 9.0e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    }
+  ]
+}

@@ -111,10 +111,10 @@ JSON configuration files specify all simulation parameters:
   },
   "biological_parameters": {
     "s": 0.01,
-    "u": 0.0000005,
-    "pq": 0.0000005,
-    "pr": 0.0000005,
-    "ps": 0.0000005,
+    "m": 0.0000005,
+    "q": 0.0000005,
+    "r": 0.0000005,
+    "l": 0.0000005,
     "idle": 0.1
   },
   "treatment": {
@@ -144,10 +144,10 @@ JSON configuration files specify all simulation parameters:
 
 #### Biological Parameters
 - `s`: Selective advantage per driver mutation
-- `u`: Mutation rate (driver mutations per cell division)
-- `pq`: Transition rate to quasi-resistant state
-- `pr`: Transition rate to resistant state
-- `ps`: Reversion rate from quasi to sensitive
+- `m`: Mutation rate (driver mutations per cell division)
+- `q`: Transition rate to quasi-resistant state
+- `r`: Transition rate to resistant state
+- `l`: Reversion rate from quasi to sensitive
 - `idle`: Baseline idle/quiescence probability
 
 #### Treatment Parameters
@@ -178,7 +178,7 @@ Five example configurations are provided in `example_configs/`:
 Each simulation generates three output files:
 
 ### 1. Main Results CSV
-Format: `{prefix}_s{s}_u{u}_state{state}_{timestamp}.csv`
+Format: `{prefix}_s{s}_m{m}_state{state}_{timestamp}.csv`
 
 Columns:
 - `K`: Number of driver mutations (generation of emergence)
@@ -215,7 +215,7 @@ np.random.seed(your_seed)
 ```
 
 2. **Use equivalent parameters**:
-   - Match `s`, `u`, `pq`, `pr`, `ps`, `idle` values
+   - Match `s`, `m`, `q`, `r`, `l`, `idle` values
    - Use same `treat_amt` and `pen_amt`
    - Set appropriate thresholds for treatment
 

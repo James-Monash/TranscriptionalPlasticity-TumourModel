@@ -1,17 +1,17 @@
 {
   "simulation": {
     "generations": 10000,
-    "initial_size": 1,
+    "initial_size": 5,
     "output_dir": "./output",
     "output_prefix": "no_treatment",
     "track_history": false
   },
   "biological_parameters": {
-    "s": 0.01,
-    "u": 0.0000005,
-    "pq": 0.0000005,
-    "pr": 0.0000005,
-    "ps": 0.0000005,
+    "s": 0.1,
+    "m": 5.71e-07,
+    "q": 0.000001,
+    "r": 0.000001,
+    "l": 0.000001,
     "idle": 0.1
   },
   "treatment": {
