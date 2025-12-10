@@ -506,9 +506,9 @@ class TumourSimulation:
         # R cells have no transition opportunities
         
         # Calculate net change for this cell type
-        # Net change = births - deaths - mutations
-        # (Transitions are handled separately in _simulate_generation)
-        net_change = n_birth - n_death - n_mutation
+        # Net change = births - deaths
+        # Mutations now represent cell birth with mutation, so they add to population
+        net_change = n_birth - n_death
         
         # Create new clones from mutations - one clone per mutated cell
         new_clones = []
