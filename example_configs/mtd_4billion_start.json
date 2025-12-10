@@ -1,0 +1,41 @@
+{
+  "simulation": {
+    "generations": 100000,
+    "initial_size": 100,
+    "initial_quasi": 0,
+    "initial_resistant": 0,
+    "output_dir": "./output",
+    "output_prefix": "mtd_4billion_start",
+    "track_history": false,
+    "enable_live_plot": true,
+    "number_of_replicates": 1,
+    "seed": 1,
+    "use_multiprocessing": true,
+    "output": {
+      "save_individual_csvs": true,
+      "save_summary_json": true,
+      "save_consolidated_summary": true
+    }
+  },
+  "biological_parameters": {
+    "s": 0.01,
+    "m": 5.0e-7,
+    "q": 1.0e-7,
+    "r": 1.0e-07,
+    "l": 5.0e-4,
+    "idle": 0.1
+  },
+  "treatment": {
+    "schedule_type": "mtd",
+    "drug_type": "abs",
+    "treat_amt": 0.8,
+    "pen_amt": 4.0,
+    "dose_duration": 24,
+    "treatment_start_size": 1000000000,
+    "treatment_stop_size": 2000000000,
+    "relapse_size": 4000000000,
+    "penalty": false,
+    "secondary_therapy": false,
+    "secondary_therapy_type": "plast"
+  }
+}

@@ -9,7 +9,6 @@ Handles:
 """
 
 import numpy as np
-import pandas
 from typing import Dict, Optional, Tuple, List
 from enum import Enum
 
@@ -112,7 +111,8 @@ class Treatment:
         """
         k_list = list(range(1, 50)) # The first cell is considered to have 1 driver mutation
         
-        rows = []
+        # Use dict instead of DataFrame for O(1) lookups
+        self.prob_table = {}
         for k in k_list:
             # Death probability decreases with mutations (selective advantage)
             prob_death = ((1 - self.base_idle) / 2) * (1 - self.base_s) ** k
@@ -126,8 +126,7 @@ class Treatment:
             # Birth probability is remainder
             prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_quasi - prob_to_resistant - prob_to_sensitive
             
-            rows.append({
-                'k': k,
+            self.prob_table[k] = {
                 'prob_idle': self.base_idle,
                 'prob_birth': prob_birth,
                 'prob_death': prob_death,
@@ -135,15 +134,13 @@ class Treatment:
                 'prob_to_quasi': prob_to_quasi,
                 'prob_to_resistant': prob_to_resistant,
                 'prob_to_sensitive': prob_to_sensitive
-            })
-        
-        self.prob_table = pandas.DataFrame(rows)
+            }
 
     def _extend_probability_table(self, new_k: int):
         """
         Extend the probability table up to new_k (inclusive).
         """
-        current_max_k = self.prob_table['k'].max()
+        current_max_k = max(self.prob_table.keys())
         for k in range(int(current_max_k) + 1, new_k + 1):
             prob_death = ((1 - self.base_idle) / 2) * (1 - self.base_s) ** k
             prob_mutation = self.base_m * (1 - prob_death)
@@ -151,8 +148,7 @@ class Treatment:
             prob_to_resistant = self.base_r * (1 - prob_death)
             prob_to_sensitive = self.base_l * (1 - prob_death)
             prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_quasi - prob_to_resistant - prob_to_sensitive
-            self.prob_table.loc[len(self.prob_table)] = {
-                'k': k,
+            self.prob_table[k] = {
                 'prob_idle': self.base_idle,
                 'prob_birth': prob_birth,
                 'prob_death': prob_death,
@@ -177,19 +173,20 @@ class Treatment:
         dict
             Dictionary of base probabilities
         """
-        if k > len(self.prob_table):
+        if k not in self.prob_table:
             self._extend_probability_table(k)
 
-        # Use iloc to access by position (k=1 → index 0, k=2 → index 1, etc.)
-        row = self.prob_table.iloc[k - 1]
+        # Direct dict lookup - O(1) instead of O(n) with DataFrame
+        # Return copy since caller may modify it
+        probs = self.prob_table[k]
         return {
-            'prob_idle': row['prob_idle'],
-            'prob_birth': row['prob_birth'],
-            'prob_death': row['prob_death'],
-            'prob_mutation': row['prob_mutation'],
-            'prob_to_quasi': row['prob_to_quasi'],
-            'prob_to_resistant': row['prob_to_resistant'],
-            'prob_to_sensitive': row['prob_to_sensitive']
+            'prob_idle': probs['prob_idle'],
+            'prob_birth': probs['prob_birth'],
+            'prob_death': probs['prob_death'],
+            'prob_mutation': probs['prob_mutation'],
+            'prob_to_quasi': probs['prob_to_quasi'],
+            'prob_to_resistant': probs['prob_to_resistant'],
+            'prob_to_sensitive': probs['prob_to_sensitive']
         }
     
     def update_treatment_state(self, tumor_size: int, generation: int):
@@ -366,11 +363,12 @@ class Treatment:
             if cell_type in ["Q", "R"]:
                 probs = self._apply_penalty(probs, cell_type, conc1)
    
-        # Normalize to ensure sum is exactly 1.0
-        total = sum(probs.values())
-        if total > 0:
-            for key in probs:
-                probs[key] /= total
+        # Only normalize if treatment was applied (base probs already normalized)
+        if self.treatment_active or (self.penalty_enabled and not self.treatment_active and cell_type in ["Q", "R"]):
+            total = sum(probs.values())
+            if total > 0:
+                for key in probs:
+                    probs[key] /= total
         
         return probs
     

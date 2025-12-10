@@ -1,0 +1,14 @@
+{
+  "config_file": "example_configs\\mtd_4billion_start.json",
+  "final_generation": 2902,
+  "final_state": "relapsed",
+  "final_total_cells": 4070916636,
+  "final_sensitive": 2113744,
+  "final_quasi": 4068802892,
+  "final_resistant": 0,
+  "final_n_clones": 8463,
+  "doses_given": 38,
+  "treatment_schedule": "mtd",
+  "drug_type": "abs",
+  "treatment_active_at_end": true
+}

@@ -61,8 +61,14 @@ config = {
     "simulation": {
         "generations": 5000,
         "initial_size": 1,
+        "initial_quasi": 0,
+        "initial_resistant": 0,
         "output_dir": "./my_results",
-        "output_prefix": "my_simulation"
+        "output_prefix": "my_simulation",
+        "seed": 42,
+        "enable_live_plot": False,
+        "number_of_replicates": 1,
+        "use_multiprocessing": True
     },
     "biological_parameters": {
         "s": 0.01,
@@ -79,9 +85,11 @@ config = {
         "pen_amt": 4.0,
         "dose_duration": 24,
         "treatment_start_size": 1e9,
+        "treatment_stop_size": 1e9,
         "relapse_size": 4e9,
         "penalty": False,
-        "secondary_therapy": False
+        "secondary_therapy": False,
+        "secondary_therapy_type": "plast"
     }
 }
 
@@ -96,6 +104,19 @@ state, results = sim.run()
 
 ## Setting Random Seeds for Reproducibility
 
+The simulator now supports built-in seed configuration:
+
+```json
+{
+  "simulation": {
+    "seed": 42,
+    "number_of_replicates": 1
+  }
+}
+```
+
+For programmatic use:
+
 ```python
 import random
 import numpy as np
@@ -108,6 +129,42 @@ np.random.seed(42)
 sim = TumourSimulation("config.json")
 state, results = sim.run()
 ```
+
+## Visualization
+
+Generate population dynamics plots:
+
+```json
+{
+  "simulation": {
+    "enable_live_plot": true
+  }
+}
+```
+
+This creates a plot at the end showing:
+- Total population (blue)
+- Quasi-resistant cells (orange)
+- Resistant cells (red)
+
+## Starting with Pre-existing Resistance
+
+Simulate tumors that already have resistant cells:
+
+```json
+{
+  "simulation": {
+    "initial_size": 4000000000,
+    "initial_quasi": 30000,
+    "initial_resistant": 0
+  }
+}
+```
+
+This is useful for:
+- Testing treatment on established tumors
+- Modeling relapse scenarios
+- Studying competition between cell types
 
 ## Common Use Cases
 
@@ -316,6 +373,7 @@ This will run 5 test cases and create output in `./test_output/`.
 - Verify `schedule_type` is not `"off"`
 - Check `treatment_start_size` threshold is reached
 - Confirm `treat_amt` and `pen_amt` are set
+- Set `track_detailed_history` to True to view how the tumour is growing
 
 ### Different results each run
 - Set random seeds before running simulation
@@ -333,22 +391,3 @@ This will run 5 test cases and create output in `./test_output/`.
 3. **Try example configs**: Run all files in `example_configs/`
 4. **Create custom treatments**: Modify JSON configurations
 5. **Extend the code**: Add new drug types or schedules
-
-## Common Parameters
-
-### Biological Parameters (typical values)
-- `s`: 0.01 - 0.05 (selective advantage)
-- `m`: 1e-7 - 1e-5 (mutation rate)
-- `q`, `r`, `l`: 1e-7 - 1e-5 (transition rates)
-- `idle`: 0 - 0.2 (quiescence)
-
-### Treatment Parameters (typical values)
-- `treat_amt`: 0.7 - 0.9 (efficacy)
-- `pen_amt`: 2 - 6 (resistance penalty)
-- `dose_duration`: 24 - 96 (generations per dose)
-- `treatment_start_size`: 1e8 - 1e9 (when to start)
-- `relapse_size`: 1e9 - 1e10 (treatment failure)
-
-## Contact & Support
-
-For questions about the code, see the documentation files or examine the original `ParametrizedSimulator_*.py` files for comparison.

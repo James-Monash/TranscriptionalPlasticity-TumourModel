@@ -26,6 +26,8 @@ Stores information about clonal populations with identical driver mutations.
 - `update_counts()`: Update cell populations
 - `to_dict()`: Export clone data
 - `is_extinct()`: Check if clone has died out
+- `get_total_resistant()`: Get total resistant cells across all clones
+- `get_total_by_type()`: Get counts for all cell types
 
 ### 2. `Treatment` (treatment.py)
 Manages drug treatment schedules and calculates branching probabilities.
@@ -105,9 +107,20 @@ JSON configuration files specify all simulation parameters:
   "simulation": {
     "generations": 10000,
     "initial_size": 1,
+    "initial_quasi": 0,
+    "initial_resistant": 0,
     "output_dir": "./output",
     "output_prefix": "simulation_name",
-    "track_history": true
+    "track_history": false,
+    "enable_live_plot": false,
+    "number_of_replicates": 1,
+    "seed": 42,
+    "use_multiprocessing": true,
+    "output": {
+      "save_individual_csvs": true,
+      "save_summary_json": true,
+      "save_consolidated_summary": true
+    }
   },
   "biological_parameters": {
     "s": 0.01,
@@ -137,10 +150,17 @@ JSON configuration files specify all simulation parameters:
 
 #### Simulation Section
 - `generations`: Number of timesteps to simulate
-- `initial_size`: Initial tumor size (typically 1)
+- `initial_size`: Initial number of sensitive cells (typically 1)
+- `initial_quasi`: Initial number of quasi-resistant cells (default: 0)
+- `initial_resistant`: Initial number of fully resistant cells (default: 0)
 - `output_dir`: Directory for output files
 - `output_prefix`: Prefix for output filenames
-- `track_history`: Whether to record detailed history (every 10 generations)
+- `track_history`: Whether to record detailed history every 10 generations (default: false)
+- `enable_live_plot`: Generate population dynamics plot at end of simulation (default: false)
+- `number_of_replicates`: Number of replicates to run (for multi-replicate simulations)
+- `seed`: Random seed for reproducibility (optional)
+- `use_multiprocessing`: Use parallel processing for replicates (default: true)
+- `output`: Dictionary of output options (see OUTPUT_CONFIGURATION.md)
 
 #### Biological Parameters
 - `s`: Selective advantage per driver mutation

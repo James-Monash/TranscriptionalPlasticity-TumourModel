@@ -1,11 +1,12 @@
 {
     "simulation": {
         "generations": 100000,
-        "initial_size": 100,
+        "initial_size": 10,
         "output_dir": "./output",
-        "output_prefix": "multi_replicate",
+        "output_prefix": "s0.001_q1.8167e-07_l9.08e-04",
         "track_history": false,
-        "number_of_replicates": 100,
+        "number_of_replicates": 10000,
+        "use_multiprocessing": true,
         "output": {
             "save_individual_csvs": false,
             "save_summary_json": false,
@@ -18,7 +19,7 @@
         "m": 5.71e-07,
         "q": 1.68e-07,
         "r": 0,
-        "l": 0.00084,
+        "l": 8.4e-04,
         "idle": 0.1
     },
     "treatment": {

@@ -1,0 +1,664 @@
+{
+  "simulations": [
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-07_l8.4e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-07,
+            "r": 0,
+            "l": 8.4e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-07_l1.68e-03",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-07,
+            "r": 0,
+            "l": 1.68e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-07_l4.2e-03",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-07,
+            "r": 0,
+            "l": 4.2e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-07_l8.4e-03",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-07,
+            "r": 0,
+            "l": 8.4e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40336e-08_l4.2e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40336e-08,
+            "r": 0,
+            "l": 4.2e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40336e-08_l8.4e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40336e-08,
+            "r": 0,
+            "l": 8.4e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40336e-08_l2.1e-03",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40336e-08,
+            "r": 0,
+            "l": 2.1e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40336e-08_l4.2e-03",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40336e-08,
+            "r": 0,
+            "l": 4.2e-03,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-08_l8.4e-05",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-08,
+            "r": 0,
+            "l": 8.4e-05,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-08_l1.68e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-08,
+            "r": 0,
+            "l": 1.68e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-08_l4.2e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-08,
+            "r": 0,
+            "l": 4.2e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-08_l8.4e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-08,
+            "r": 0,
+            "l": 8.4e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40e-09_l4.2e-06",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40e-09,
+            "r": 0,
+            "l": 4.2e-06,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40e-09_l8.4e-06",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40e-09,
+            "r": 0,
+            "l": 8.4e-06,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40e-09_l2.1e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40e-09,
+            "r": 0,
+            "l": 2.1e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q8.40e-09_l4.2e-04",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 8.40e-09,
+            "r": 0,
+            "l": 4.2e-04,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-09_l8.4e-06",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-09,
+            "r": 0,
+            "l": 8.4e-06,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-09_l1.68e-05",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-09,
+            "r": 0,
+            "l": 1.68e-05,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-09_l4.2e-05",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-09,
+            "r": 0,
+            "l": 4.2e-05,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    },
+    {
+        "simulation": {
+            "generations": 100000,
+            "initial_size": 10,
+            "output_dir": "./output",
+            "output_prefix": "s0.1_q1.68e-09_l8.4e-05",
+            "track_history": false,
+            "number_of_replicates": 100,
+            "output": {
+                "save_individual_csvs": false,
+                "save_summary_json": false,
+                "save_consolidated_summary": true,
+                "output_columns": ["fraction_quasi"]
+            }
+        },
+        "biological_parameters": {
+            "s": 0.1,
+            "m": 5.71e-07,
+            "q": 1.68e-09,
+            "r": 0,
+            "l": 8.4e-05,
+            "idle": 0.1
+        },
+        "treatment": {
+            "schedule_type": "off",
+            "drug_type": "abs",
+            "treat_amt": 0.0,
+            "pen_amt": 0.0,
+            "dose_duration": 0,
+            "penalty": false,
+            "secondary_therapy": false
+        }
+    }
+  ]
+}

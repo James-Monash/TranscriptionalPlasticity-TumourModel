@@ -237,6 +237,10 @@ class CloneCollection:
         """Get total number of cells across all clones."""
         return sum(clone.total_cells for clone in self.clones.values())
     
+    def get_total_resistant(self) -> int:
+        """Get total number of resistant cells across all clones."""
+        return sum(clone.n_resistant for clone in self.clones.values())
+    
     def get_total_by_type(self) -> Dict[str, int]:
         """
         Get total cells by type across all clones.

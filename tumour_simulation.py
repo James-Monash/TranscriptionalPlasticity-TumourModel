@@ -12,6 +12,7 @@ Responsibilities:
 import json
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from datetime import datetime
 from typing import Dict, Optional, Tuple, List
 from pathlib import Path
@@ -24,13 +25,20 @@ from treatment import Treatment, ScheduleType
 # Create NumPy random generator for 64-bit integer support in binomial sampling
 # Will be reinitialized in each worker process for multiprocessing
 _rng = None
+_seed = None
 
 def _get_rng():
     """Get or initialize the RNG for this process."""
-    global _rng
+    global _rng, _seed
     if _rng is None:
-        _rng = np.random.default_rng()
+        _rng = np.random.default_rng(_seed)
     return _rng
+
+def _set_seed(seed):
+    """Set the global seed for the RNG."""
+    global _rng, _seed
+    _seed = seed
+    _rng = np.random.default_rng(_seed)
 
 
 class TumourSimulation:
@@ -69,14 +77,31 @@ class TumourSimulation:
         # Extract simulation parameters
         self.generations = self.config['simulation']['generations']
         self.initial_size = self.config['simulation']['initial_size']
+        self.initial_quasi = self.config['simulation'].get('initial_quasi', 0)
+        self.initial_resistant = self.config['simulation'].get('initial_resistant', 0)
         self.output_dir = self.config['simulation'].get('output_dir', './output')
         self.output_prefix = self.config['simulation'].get('output_prefix', 'simulation')
+        self.seed = self.config['simulation'].get('seed', None)
         # Append condition index and replicate number to output prefix
         if condition_index is not None:
             self.output_prefix = f"{self.output_prefix}_cond{condition_index}"
         if replicate_number is not None:
             self.output_prefix = f"{self.output_prefix}_rep{replicate_number}"
         self.track_detailed_history = self.config['simulation'].get('track_history', False)
+        self.enable_live_plot = self.config['simulation'].get('enable_live_plot', False)
+        
+        # Initialize RNG with seed if provided
+        if self.seed is not None:
+            # For replicates, create unique seed by adding replicate number
+            effective_seed = self.seed
+            if replicate_number is not None:
+                effective_seed = self.seed + replicate_number
+            if condition_index is not None:
+                effective_seed = effective_seed + (condition_index * 100000)
+            _set_seed(effective_seed)
+        else:
+            # No seed specified, use default random initialization
+            _set_seed(None)
         
         # Get number of replicates (for reporting purposes)
         self.number_of_replicates = self.config['simulation'].get('number_of_replicates', 1)
@@ -147,6 +172,18 @@ class TumourSimulation:
         
         # Create output directory
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Initialize plotting variables
+        self.plot_data = {
+            'generations': [],
+            'total_population': [],
+            'resistant_population': [],
+            'quasi_population': []
+        }
+        self.fig = None
+        self.ax = None
+        self.total_line = None
+        self.resistant_line = None
     
     def _load_config(self, config_path: str) -> Dict:
         """
@@ -167,14 +204,14 @@ class TumourSimulation:
         return config
     
     def _initialize_tumor(self):
-        """Initialize tumor with starting clone of sensitive cells."""
+        """Initialize tumor with starting clone containing specified cell types."""
         initial_clone = self.clones.add_clone(
             parent_id=-1,
             parent_type="Sens",
             generation=0,
             n_sensitive=self.initial_size,
-            n_quasi=0,
-            n_resistant=0,
+            n_quasi=self.initial_quasi,
+            n_resistant=self.initial_resistant,
             n_driver_mutations=1
         )
     
@@ -188,8 +225,6 @@ class TumourSimulation:
             (final_state, results_dataframe)
             final_state: 'ongoing'=timeout, 'extinct'=extinct, 'relapsed'=relapsed/detected
         """
-        print(f"Starting simulation: {self.output_prefix}")
-        print(f"Generations: {self.generations}, Initial size: {self.initial_size}")
         start_time = datetime.now()
         
         for generation in range(self.generations):
@@ -200,16 +235,23 @@ class TumourSimulation:
             
             # Check if tumor went extinct
             tumor_size = self.clones.get_total_cells()
+            
+            # Record data for plotting
+            if self.enable_live_plot:
+                self.plot_data['generations'].append(generation)
+                self.plot_data['total_population'].append(tumor_size)
+                self.plot_data['resistant_population'].append(self.clones.get_total_resistant())
+                counts = self.clones.get_total_by_type()
+                self.plot_data['quasi_population'].append(counts['quasi'])
+            
             #print(tumor_size)
             if tumor_size == 0:
                 self.state = 'extinct'
-                print(f"Tumor extinct at generation {generation}")
                 break
             
-            # Check if tumor has reached 4 billion cells
-            if tumor_size >= 4_000_000_000:
+            # Check if tumor has reached relapse size
+            if tumor_size >= self.treatment.relapse_size:
                 self.state = 'relapsed'
-                print(f"Tumor reached 4 billion cells at generation {generation}, size: {tumor_size:.2e}")
                 break
             
             # Update treatment state
@@ -232,7 +274,6 @@ class TumourSimulation:
             # Check for relapse/detection
             if self.treatment.relapsed:
                 self.state = 'relapsed'
-                print(f"Tumor relapsed at generation {generation}, size: {tumor_size:.2e}")
                 break
             
             # Progress updates
@@ -246,15 +287,6 @@ class TumourSimulation:
         
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
-        print(f"Simulation completed in {duration:.2f} seconds")
-        
-        # Log mutation statistics
-        if self.total_cell_events > 0:
-            mutation_proportion = self.total_driver_mutations / self.total_cell_events
-            print(f"Driver mutation statistics:")
-            print(f"  Total cell events: {self.total_cell_events:,}")
-            print(f"  Total driver mutations: {self.total_driver_mutations:,}")
-            print(f"  Proportion with driver mutation: {mutation_proportion:.6f} ({mutation_proportion*100:.4f}%)")
         
         # Generate results
         results = self._generate_results() 
@@ -262,6 +294,10 @@ class TumourSimulation:
         # Save results if configured
         if self.save_individual_csvs or self.save_summary_json:
             self._save_results(results)
+        
+        # Generate plot if enabled
+        if self.enable_live_plot:
+            self._generate_plot()
         
         return self.state, results
     
@@ -279,7 +315,7 @@ class TumourSimulation:
         new_clones = []
         
         # Get unique driver mutation counts present in current generation
-        unique_k_values = self.clones.get_unique_driver_mutations()
+        unique_k_values = self.clones.get_unique_driver_mutations() # O(1) operation; the set is maintained in CloneCollection
         
         # Pre-calculate probabilities for all unique k values and cell types
         # This avoids redundant probability calculations for clones with same k
@@ -289,8 +325,10 @@ class TumourSimulation:
                 if cache_key not in self.probability_cache:
                     self.probability_cache[cache_key] = self.treatment.calculate_probabilities(k, cell_type)
 
-        import pprint
         #print(f"\n--- Generation {self.current_generation} ---")
+        # Need list() to create snapshot since new clones are added during iteration
+        #print(f"\n--- Generation {self.current_generation} ---")
+        # Need list() to create snapshot since new clones are added during iteration
         for clone in list(self.clones.clones.values()):
             #print(f'The total number of cells is {self.clones.get_total_cells()}')
             #print(f"\nClone ID {clone.clone_id} (Gen {clone.generation}): S={clone.n_sensitive}, Q={clone.n_quasi}, R={clone.n_resistant}")
@@ -716,6 +754,26 @@ class TumourSimulation:
             'doses_given': treatment_state['doses_given']
         }
     
+    def _generate_plot(self):
+        """Generate and display the population plot at the end of simulation."""
+        if not self.plot_data['generations']:
+            return
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.plot_data['generations'], self.plot_data['total_population'], 
+                'b-', label='Total population', linewidth=2)
+        plt.plot(self.plot_data['generations'], self.plot_data['quasi_population'], 
+                'orange', label='Quasi-resistant cells', linewidth=2)
+        plt.plot(self.plot_data['generations'], self.plot_data['resistant_population'], 
+                'r-', label='Resistant cells', linewidth=2)
+        plt.xlabel('Generation', fontsize=12)
+        plt.ylabel('Population size', fontsize=12)
+        plt.title('Tumor Population Dynamics', fontsize=14)
+        plt.legend(loc='best')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+    
     def get_final_summary_row(self) -> Dict:
         """
         Get a summary row for this simulation suitable for aggregation.
@@ -770,14 +828,20 @@ class TumourSimulation:
         return summary
 
 
-def _init_worker():
+def _init_worker(base_seed=None):
     """Initialize worker process with fresh RNG using process-safe seeding."""
-    global _rng
+    global _rng, _seed
     import os
     # Use process ID to create a unique but reproducible seed for this worker
     # This ensures each worker has independent random streams
     pid = os.getpid()
-    _rng = np.random.default_rng(np.random.SeedSequence(entropy=pid))
+    if base_seed is not None:
+        # If base seed provided, combine it with PID for reproducible but independent streams
+        _seed = base_seed + pid
+    else:
+        # No seed specified, use PID only
+        _seed = pid
+    _rng = np.random.default_rng(_seed)
 
 
 def _run_single_replicate(args):
@@ -905,7 +969,9 @@ def _run_condition_until_target(config_path: str, sim_config: Dict, condition_in
     total_extinct = 0
     
     # Use a pool that persists across batches with initializer
-    with Pool(processes=num_workers, initializer=_init_worker) as pool:
+    # Get seed from config if available
+    base_seed = sim_config.get('simulation', {}).get('seed', None)
+    with Pool(processes=num_workers, initializer=_init_worker, initargs=(base_seed,)) as pool:
         while len(successful_results) < target_successful:
             # Run batches to account for extinctions
             # Estimate batch size based on success rate so far
@@ -939,8 +1005,6 @@ def _run_condition_until_target(config_path: str, sim_config: Dict, condition_in
             batch_success = sum(1 for _, _, state, _, _ in batch_results if state != 'extinct' and state != 'error')
             batch_error = sum(1 for _, _, state, _, _ in batch_results if state == 'error')
             
-            print(f"  Batch completed: {len(batch_results)} simulations ({batch_success} success, {batch_extinct} extinct, {batch_error} error)")
-            
             # Collect successful results (non-extinct)
             batch_collected = 0
             for cond_idx, rep_num, state, df, summary in batch_results:
@@ -955,10 +1019,6 @@ def _run_condition_until_target(config_path: str, sim_config: Dict, condition_in
             # = successful ones collected + extinct/error ones (which we had to run to find successful ones)
             total_attempts += batch_collected + batch_extinct + batch_error
             total_extinct += batch_extinct
-            
-            # Progress update
-            print(f"  Progress: {len(successful_results)}/{target_successful} successful "
-                  f"({total_attempts} total attempts, {total_extinct} extinct)")
     
     # Trim to exact target number
     successful_results = successful_results[:target_successful]
@@ -1013,6 +1073,11 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
     save_consolidated = full_config.get('simulation', {}).get('output', {}).get('save_consolidated_summary', True) if 'simulation' in full_config else True
     output_columns = full_config.get('simulation', {}).get('output', {}).get('output_columns', None) if 'simulation' in full_config else None
     
+    # Check if config specifies use_multiprocessing (overrides function parameter)
+    config_use_mp = full_config.get('simulation', {}).get('use_multiprocessing', None) if 'simulation' in full_config else None
+    if config_use_mp is not None:
+        use_multiprocessing = config_use_mp
+    
     # Check if config has multiple conditions (simulations array) or single condition
     if 'simulations' in full_config:
         # Multiple initial conditions - each simulation is a complete config
@@ -1027,6 +1092,7 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
                 print(f"Running in SEQUENTIAL mode (no multiprocessing)")
             print("="*80)
             
+            condition_start = datetime.now()
             if use_multiprocessing:
                 results, summaries, stats = _run_condition_until_target(
                     config_path, sim_config, idx, target_successful, num_workers
@@ -1042,7 +1108,8 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
                 **stats
             })
             
-            print(f"\nCondition {idx + 1} complete:")
+            condition_elapsed = (datetime.now() - condition_start).total_seconds()
+            print(f"\nCondition {idx + 1} complete (elapsed: {condition_elapsed:.2f}s):")
             print(f"  Successful: {stats['successful']}")
             print(f"  Total attempts: {stats['total_attempts']}")
             print(f"  Extinct: {stats['extinct']}")
@@ -1068,7 +1135,7 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
                         summary_df = summary_df[available_columns]
                     else:
                         print(f"  Warning: None of the specified output_columns exist in summary data")
-                
+                                
                 summary_df.to_csv(summary_filepath, index=False)
                 print(f"  Consolidated summary saved to: {summary_filepath}")
         
@@ -1082,6 +1149,7 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
             print(f"Running in SEQUENTIAL mode (no multiprocessing)")
         print("="*80)
         
+        condition_start = datetime.now()
         if use_multiprocessing:
             results, summaries, stats = _run_condition_until_target(
                 config_path, full_config, None, target_successful, num_workers
@@ -1097,7 +1165,8 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
             **stats
         })
         
-        print(f"\nSimulation complete:")
+        condition_elapsed = (datetime.now() - condition_start).total_seconds()
+        print(f"\nSimulation complete (elapsed: {condition_elapsed:.2f}s):")
         print(f"  Successful: {stats['successful']}")
         print(f"  Total attempts: {stats['total_attempts']}")
         print(f"  Extinct: {stats['extinct']}")
@@ -1140,7 +1209,7 @@ if __name__ == "__main__":
     
     config_file = sys.argv[1]
     num_workers = int(sys.argv[2]) if len(sys.argv) > 2 else None
-    
+
     # Record overall timing
     overall_start = datetime.now()
     
@@ -1185,7 +1254,7 @@ if __name__ == "__main__":
     print("OVERALL STATISTICS")
     print(f"{'='*80}")
     print(f"Successful replicates (returned): {total_successful}")
-    print(f"  - Relapsed (reached 4B cells): {number_relapsed}")
+    print(f"  - Relapsed: {number_relapsed}")
     print(f"  - Ongoing (timeout): {number_ongoing}")
     print(f"\nTotal attempts made: {total_attempts}")
     print(f"Extinct tumors (discarded): {total_extinct}")

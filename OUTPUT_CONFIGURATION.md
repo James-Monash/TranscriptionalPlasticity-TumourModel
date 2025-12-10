@@ -12,8 +12,13 @@ Add an `"output"` section to your JSON configuration under `"simulation"`:
 {
   "simulation": {
     "generations": 100000,
-    "initial_size": 100,
+    "initial_size": 1,
+    "initial_quasi": 0,
+    "initial_resistant": 0,
     "number_of_replicates": 100,
+    "seed": 42,
+    "use_multiprocessing": true,
+    "enable_live_plot": false,
     "output": {
       "save_individual_csvs": false,
       "save_summary_json": false,
@@ -31,6 +36,35 @@ Add an `"output"` section to your JSON configuration under `"simulation"`:
 | `save_summary_json` | boolean | `false` | Save individual JSON summary file for each replicate |
 | `save_consolidated_summary` | boolean | `true` | Save single CSV with one row per successful replicate |
 | `output_columns` | array | `null` | List of column names to include in consolidated summary (null = all columns) |
+
+## Visualization Options
+
+The simulation can generate population dynamics plots showing tumor growth over time.
+
+### Enable Live Plot
+
+Add `enable_live_plot` to your simulation configuration:
+
+```json
+{
+  "simulation": {
+    "enable_live_plot": true
+  }
+}
+```
+
+**What it does:**
+- Generates a plot at the end of the simulation
+- Shows three lines:
+  - **Total population** (blue): All cells
+  - **Quasi-resistant cells** (orange): Phenotypically plastic cells
+  - **Resistant cells** (red): Fully resistant cells
+- X-axis: Generation number
+- Y-axis: Population size
+
+**Note:** Plot generation is disabled by default and is only shown for individual simulations, not during multi-replicate runs with multiprocessing.
+
+**Example output:** A matplotlib figure displaying tumor dynamics, useful for visualizing relapse patterns and resistance emergence.
 
 ## Consolidated Summary Output
 
