@@ -104,6 +104,7 @@ JSON configuration files specify all simulation parameters:
 
 ```json
 {
+  "use_multiprocessing": true,
   "simulation": {
     "generations": 10000,
     "initial_size": 1,
@@ -115,7 +116,6 @@ JSON configuration files specify all simulation parameters:
     "enable_live_plot": false,
     "number_of_replicates": 1,
     "seed": 42,
-    "use_multiprocessing": true,
     "output": {
       "save_individual_csvs": true,
       "save_summary_json": true,
@@ -148,6 +148,9 @@ JSON configuration files specify all simulation parameters:
 
 ### Configuration Parameters
 
+#### Global Settings
+- `use_multiprocessing`: Enable parallel processing across conditions and replicates (default: true). When enabled, multiple conditions and their replicates will be processed in parallel for maximum performance.
+
 #### Simulation Section
 - `generations`: Number of timesteps to simulate
 - `initial_size`: Initial number of sensitive cells (typically 1)
@@ -159,7 +162,6 @@ JSON configuration files specify all simulation parameters:
 - `enable_live_plot`: Generate population dynamics plot at end of simulation (default: false)
 - `number_of_replicates`: Number of replicates to run (for multi-replicate simulations)
 - `seed`: Random seed for reproducibility (optional)
-- `use_multiprocessing`: Use parallel processing for replicates (default: true)
 - `output`: Dictionary of output options (see OUTPUT_CONFIGURATION.md)
 
 #### Biological Parameters

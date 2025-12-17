@@ -1,13 +1,14 @@
 {
   "simulation": {
-    "generations": 10000,
-    "initial_size": 1,
+    "generations": 100000,
+    "initial_size": 1000,
     "output_dir": "./output",
     "output_prefix": "mtd_simulation",
-    "track_history": true
+    "track_history": true,
+    "enable_live_plot": true
   },
   "biological_parameters": {
-    "s": 0.01,
+    "s": 0.001,
     "m": 0.0000005,
     "q": 0.0000005,
     "r": 0.0000005,
@@ -15,6 +16,7 @@
     "idle": 0.1
   },
   "treatment": {
+    "kill_mechanism": "kbe",
     "schedule_type": "mtd",
     "drug_type": "abs",
     "treat_amt": 0.8,

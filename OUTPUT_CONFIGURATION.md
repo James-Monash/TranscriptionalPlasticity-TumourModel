@@ -10,6 +10,7 @@ Add an `"output"` section to your JSON configuration under `"simulation"`:
 
 ```json
 {
+  "use_multiprocessing": true,
   "simulation": {
     "generations": 100000,
     "initial_size": 1,
@@ -17,7 +18,6 @@ Add an `"output"` section to your JSON configuration under `"simulation"`:
     "initial_resistant": 0,
     "number_of_replicates": 100,
     "seed": 42,
-    "use_multiprocessing": true,
     "enable_live_plot": false,
     "output": {
       "save_individual_csvs": false,

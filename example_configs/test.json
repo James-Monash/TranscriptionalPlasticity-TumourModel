@@ -1,11 +1,11 @@
 {
     "simulation": {
         "generations": 100000,
-        "initial_size": 10,
+        "initial_size": 1000,
         "output_dir": "./output",
         "output_prefix": "s0.001_q1.8167e-07_l9.08e-04",
         "track_history": false,
-        "number_of_replicates": 10000,
+        "number_of_replicates": 1,
         "use_multiprocessing": true,
         "output": {
             "save_individual_csvs": false,
@@ -15,7 +15,7 @@
         }
     },
     "biological_parameters": {
-        "s": 0.1,
+        "s": 0.001,
         "m": 5.71e-07,
         "q": 1.68e-07,
         "r": 0,

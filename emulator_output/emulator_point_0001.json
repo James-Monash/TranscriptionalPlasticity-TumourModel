@@ -1,0 +1,23 @@
+{
+  "simulation": {
+    "initial_size": 1000,
+    "output_dir": "./emulator_output",
+    "output_prefix": "emulator_point_0001",
+    "number_of_replicates": 100,
+    "output": {
+      "save_consolidated_summary": false
+    }
+  },
+  "biological_parameters": {
+    "s": 0.01674503385000483,
+    "m": 3.034522445620537e-08,
+    "q": 0.0031070544580226794,
+    "r": 1.4038681718988534e-10,
+    "l": 4.821041712543389e-06,
+    "idle": 0.37683087527878495
+  },
+  "treatment": {
+    "schedule_type": "off"
+  },
+  "use_multiprocessing": true
+}

@@ -1,0 +1,2 @@
+condition_index,replicate_number,final_generation,final_state,initial_size,s,m,q,r,l,idle,final_total_cells,final_sensitive,final_transient,final_resistant,final_n_clones,fraction_sensitive,fraction_transient,fraction_resistant,treatment_schedule,drug_type,doses_given,treatment_active_at_end,total_cell_events,total_driver_mutations,mutation_rate
+0,0,232,relapsed,10,0.1,5.71e-07,1.68e-07,0,0.00084,0.1,4341648902,4341627320,21582,0,7326,0.9999950290775493,4.970922450697972e-06,0.0,off,abs,0,False,48173315574,16387,3.40167576276281e-07

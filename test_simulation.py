@@ -63,9 +63,9 @@ def test_basic_simulation():
     summary = simulation.get_summary()
     print(f"\nResults:")
     print(f"  Final state: {state}")
-    print(f"  Total cells: {summary['total_cells']}")
+    print(f"  Total: {summary['total_cells']}")
     print(f"  Sensitive: {summary['sensitive_cells']}")
-    print(f"  Quasi: {summary['quasi_cells']}")
+    print(f"  Transient: {summary['transient_cells']}")
     print(f"  Resistant: {summary['resistant_cells']}")
     print(f"  Number of clones: {summary['n_clones']}")
     
@@ -227,8 +227,8 @@ def test_clone_class():
         parent_type="Sens",
         generation=0,
         n_sensitive=100,
-        n_quasi=10,
-        n_resistant=5
+        n_transient=10,
+        n_resistant=5,
     )
     
     print(f"Initial clone: {clone}")
@@ -236,14 +236,14 @@ def test_clone_class():
     print(f"  Is extinct: {clone.is_extinct()}")
     
     # Update counts
-    clone.update_counts(delta_sensitive=50, delta_quasi=-5, delta_resistant=10)
+    clone.update_counts(delta_sensitive=50, delta_transient=-5, delta_resistant=10)
     print(f"\nAfter update: {clone}")
     print(f"  Total cells: {clone.total_cells}")
     
     # Test CloneCollection
     collection = CloneCollection()
     c1 = collection.add_clone(-1, "Sens", 0, n_sensitive=100)
-    c2 = collection.add_clone(0, "S", 5, n_sensitive=50, n_quasi=10)
+    c2 = collection.add_clone(0, "S", 5, n_sensitive=50, n_transient=10)
     
     print(f"\nClone collection: {collection}")
     print(f"  Total cells: {collection.get_total_cells()}")

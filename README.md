@@ -27,6 +27,7 @@ python tumour_simulation.py example_configs/mtd_4billion_start.json
 
 ```json
 {
+  "use_multiprocessing": true,
   "simulation": {
     "generations": 100000,
     "initial_size": 1,
@@ -34,8 +35,7 @@ python tumour_simulation.py example_configs/mtd_4billion_start.json
     "initial_resistant": 0,
     "seed": 42,
     "enable_live_plot": true,
-    "number_of_replicates": 1,
-    "use_multiprocessing": true
+    "number_of_replicates": 1
   },
   "biological_parameters": {
     "s": 0.01,

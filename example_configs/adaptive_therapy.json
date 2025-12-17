@@ -1,10 +1,11 @@
 {
   "simulation": {
     "generations": 10000,
-    "initial_size": 1,
+    "initial_size": 100,
     "output_dir": "./output",
     "output_prefix": "adaptive_simulation",
-    "track_history": true
+    "track_history": true,
+    "enable_live_plot": true
   },
   "biological_parameters": {
     "s": 0.01,

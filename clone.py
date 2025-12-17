@@ -2,7 +2,7 @@
 Clone class: Stores information on cell populations with identical driver mutations.
 
 Tracks:
-- Number of sensitive (S), quasi-resistant (Q), and resistant (R) cells
+- Number of sensitive (S), transient-resistant (Q), and resistant (R) cells
 - Clone lineage information (parent, generation)
 - Cell type and mutation history
 """
@@ -17,7 +17,7 @@ class Clone:
     
     Each clone has a specific set of driver mutations and contains cells that can be:
     - Sensitive (S): Drug-sensitive
-    - Quasi-resistant (Q): Phenotypically plastic, partially resistant
+    - Transient-resistant (Q): Phenotypically plastic, partially resistant
     - Resistant (R): Fully resistant to primary therapy
     """
     
@@ -28,7 +28,7 @@ class Clone:
         parent_type: str,
         generation: int,
         n_sensitive: int = 0,
-        n_quasi: int = 0,
+        n_transient: int = 0,
         n_resistant: int = 0,
         n_driver_mutations: int = 1
     ):
@@ -47,8 +47,8 @@ class Clone:
             Generation (timestep) when clone emerged
         n_sensitive : int
             Initial number of sensitive cells
-        n_quasi : int
-            Initial number of quasi-resistant cells
+        n_transient : int
+            Initial number of transient-resistant cells
         n_resistant : int
             Initial number of resistant cells
         """
@@ -59,12 +59,12 @@ class Clone:
         self.n_driver_mutations = n_driver_mutations
         # Cell counts by type
         self.n_sensitive = n_sensitive
-        self.n_quasi = n_quasi
+        self.n_transient = n_transient
         self.n_resistant = n_resistant
         # Tracking history 
         self.history = {
             'n_sensitive': [],
-            'n_quasi': [],
+            'n_transient': [],
             'n_resistant': [],
             'total': [],
             'generations': []
@@ -73,12 +73,12 @@ class Clone:
     @property
     def total_cells(self) -> int:
         """Total number of cells in this clone."""
-        return self.n_sensitive + self.n_quasi + self.n_resistant
+        return self.n_sensitive + self.n_transient + self.n_resistant
     
     def update_counts(
         self,
         delta_sensitive: int = 0,
-        delta_quasi: int = 0,
+        delta_transient: int = 0,
         delta_resistant: int = 0
     ):
         """
@@ -88,13 +88,13 @@ class Clone:
         -----------
         delta_sensitive : int
             Net change in sensitive cells (births - deaths + transitions)
-        delta_quasi : int
-            Net change in quasi-resistant cells
+        delta_transient : int
+            Net change in transient-resistant cells
         delta_resistant : int
             Net change in resistant cells
         """
         self.n_sensitive += delta_sensitive
-        self.n_quasi += delta_quasi
+        self.n_transient += delta_transient
         self.n_resistant += delta_resistant
             
     def record_history(self, generation: int):
@@ -107,7 +107,7 @@ class Clone:
             Current generation number
         """
         self.history['n_sensitive'].append(self.n_sensitive)
-        self.history['n_quasi'].append(self.n_quasi)
+        self.history['n_transient'].append(self.n_transient)
         self.history['n_resistant'].append(self.n_resistant)
         self.history['total'].append(self.total_cells)
         self.history['generations'].append(generation)
@@ -132,13 +132,13 @@ class Clone:
             'K': self.generation,
             'N': self.total_cells,
             'Ns': self.n_sensitive,
-            'Nq': self.n_quasi,
+            'Nq': self.n_transient,
             'Nr': self.n_resistant
         }
     
     def __repr__(self) -> str:
         return (f"Clone(id={self.clone_id}, generation={self.generation}, "
-                f"S={self.n_sensitive}, Q={self.n_quasi}, R={self.n_resistant}, "
+                f"S={self.n_sensitive}, Q={self.n_transient}, R={self.n_resistant}, "
                 f"total={self.total_cells})")
 
 
@@ -160,7 +160,7 @@ class CloneCollection:
         parent_type: str,
         generation: int,
         n_sensitive: int = 0,
-        n_quasi: int = 0,
+        n_transient: int = 0,
         n_resistant: int = 0,
         n_driver_mutations: int = 1
     ) -> Clone:
@@ -177,8 +177,8 @@ class CloneCollection:
             Generation when clone emerged
         n_sensitive : int
             Initial sensitive cells
-        n_quasi : int
-            Initial quasi-resistant cells
+        n_transient : int
+            Initial transient-resistant cells
         n_resistant : int
             Initial resistant cells
         n_driver_mutations : int
@@ -189,20 +189,20 @@ class CloneCollection:
         Clone
             The newly created clone
         """
-        clone = Clone(
+        new_clone = Clone(
             clone_id=self.next_id,
             parent_id=parent_id,
             parent_type=parent_type,
             generation=generation,
             n_sensitive=n_sensitive,
-            n_quasi=n_quasi,
+            n_transient=n_transient,
             n_resistant=n_resistant,
             n_driver_mutations=n_driver_mutations
         )
-        self.clones[self.next_id] = clone
+        self.clones[self.next_id] = new_clone
         self.unique_driver_mutations.add(n_driver_mutations)
         self.next_id += 1
-        return clone
+        return new_clone
     
     def get_clone(self, clone_id: int) -> Optional[Clone]:
         """
@@ -248,11 +248,11 @@ class CloneCollection:
         Returns:
         --------
         dict
-            Dictionary with 'sensitive', 'quasi', 'resistant', 'total' counts
+            Dictionary with 'sensitive', 'transient', 'resistant', 'total' counts
         """
         return {
             'sensitive': sum(clone.n_sensitive for clone in self.clones.values()),
-            'quasi': sum(clone.n_quasi for clone in self.clones.values()),
+            'transient': sum(clone.n_transient for clone in self.clones.values()),
             'resistant': sum(clone.n_resistant for clone in self.clones.values()),
             'total': self.get_total_cells()
         }

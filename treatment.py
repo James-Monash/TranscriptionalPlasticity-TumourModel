@@ -19,6 +19,12 @@ class DrugType(Enum):
     PROPORTIONAL = "prop"
 
 
+class KillMechanism(Enum):
+    """Enumeration of kill mechanisms."""
+    KBE = "kbe"  # Kill by Exposure: Pd = Pd + (KillStrength - Pd) * Concentration
+    KOD = "kod"  # Kill on Division: effect = min((Pb-Pd)*3*concentration, 0.9*Pb)
+
+
 class ScheduleType(Enum):
     """Enumeration of treatment schedule types."""
     CONTINUOUS = "continuous"
@@ -60,6 +66,7 @@ class Treatment:
         # Treatment schedule parameters
         self.schedule_type = ScheduleType(config.get('schedule_type', 'off'))
         self.drug_type = DrugType(config.get('drug_type', 'abs'))
+        self.kill_mechanism = KillMechanism(config.get('kill_mechanism', 'kbe'))  # Default to KBE
         
         # Primary therapy parameters
         self.treat_amt = config.get('treat_amt', 0.8)
@@ -119,19 +126,19 @@ class Treatment:
             
             # Mutation and transition probabilities (scaled by survival)
             prob_mutation = self.base_m * (1 - prob_death) # probability of developing a new driver mutation
-            prob_to_quasi = self.base_q * (1 - prob_death) # probability of transient resistance gain
+            prob_to_transient = self.base_q * (1 - prob_death) # probability of transient resistance gain
             prob_to_resistant = self.base_r * (1 - prob_death) # probability of permanent resistance gain
             prob_to_sensitive = self.base_l * (1 - prob_death) # probability of transient resistance loss
             
             # Birth probability is remainder
-            prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_quasi - prob_to_resistant - prob_to_sensitive
+            prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_transient - prob_to_resistant - prob_to_sensitive
             
             self.prob_table[k] = {
                 'prob_idle': self.base_idle,
                 'prob_birth': prob_birth,
                 'prob_death': prob_death,
                 'prob_mutation': prob_mutation,
-                'prob_to_quasi': prob_to_quasi,
+                'prob_to_transient': prob_to_transient,
                 'prob_to_resistant': prob_to_resistant,
                 'prob_to_sensitive': prob_to_sensitive
             }
@@ -144,16 +151,16 @@ class Treatment:
         for k in range(int(current_max_k) + 1, new_k + 1):
             prob_death = ((1 - self.base_idle) / 2) * (1 - self.base_s) ** k
             prob_mutation = self.base_m * (1 - prob_death)
-            prob_to_quasi = self.base_q * (1 - prob_death)
+            prob_to_transient = self.base_q * (1 - prob_death)
             prob_to_resistant = self.base_r * (1 - prob_death)
             prob_to_sensitive = self.base_l * (1 - prob_death)
-            prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_quasi - prob_to_resistant - prob_to_sensitive
+            prob_birth = 1 - self.base_idle - prob_death - prob_mutation - prob_to_transient - prob_to_resistant - prob_to_sensitive
             self.prob_table[k] = {
                 'prob_idle': self.base_idle,
                 'prob_birth': prob_birth,
                 'prob_death': prob_death,
                 'prob_mutation': prob_mutation,
-                'prob_to_quasi': prob_to_quasi,
+                'prob_to_transient': prob_to_transient,
                 'prob_to_resistant': prob_to_resistant,
                 'prob_to_sensitive': prob_to_sensitive
             }
@@ -184,7 +191,7 @@ class Treatment:
             'prob_birth': probs['prob_birth'],
             'prob_death': probs['prob_death'],
             'prob_mutation': probs['prob_mutation'],
-            'prob_to_quasi': probs['prob_to_quasi'],
+            'prob_to_transient': probs['prob_to_transient'],
             'prob_to_resistant': probs['prob_to_resistant'],
             'prob_to_sensitive': probs['prob_to_sensitive']
         }
@@ -307,43 +314,43 @@ class Treatment:
         
         The set of available actions for each cell at a fixed time step is dependent 
         on the current state of the cell:
-        - If a cell is currently sensitive, it cannot take the quasi resistant to sensitive option
-        - If a cell is currently quasi resistant, it cannot take the sensitive to quasi resistant option
-        - If a cell currently has permanent resistance, it cannot take the sensitive to quasi 
-          resistant or the quasi resistant to sensitive option
+        - If a cell is currently sensitive, it cannot take the transient resistant to sensitive option
+        - If a cell is currently transient resistant, it cannot take the sensitive to transient resistant option
+        - If a cell currently has permanent resistance, it cannot take the sensitive to transient 
+          resistant or the transient resistant to sensitive option
         
         Parameters:
         -----------
         k : int
             Number of driver mutations in clone
         cell_type : str
-            Cell type: "S" (sensitive), "Q" (quasi), or "R" (resistant)
+            Cell type: "S" (sensitive), "Q" (transient), or "R" (resistant)
             
         Returns:
         --------
         dict
             Dictionary with probabilities: prob_idle, prob_birth, prob_death, prob_mutation,
-            prob_to_quasi, prob_to_resistant, prob_to_sensitive
+            prob_to_transient, prob_to_resistant, prob_to_sensitive
         """
         # Get base probabilities
         probs = self.get_base_probabilities(k)
         
         # Zero out impossible transitions based on current cell type
         if cell_type == "S":
-            # Sensitive cells can't lose quasi-resistance (they don't have it)
+            # Sensitive cells can't lose transient-resistance (they don't have it)
             probs['prob_to_sensitive'] = 0.0
         elif cell_type == "Q":
-            # Quasi cells can't gain quasi-resistance (they already have it)
-            probs['prob_to_quasi'] = 0.0
+            # Transient cells can't gain transient-resistance (they already have it)
+            probs['prob_to_transient'] = 0.0
         elif cell_type == "R":
-            # Resistant cells can't gain or lose quasi-resistance or gain more resistance (permanent resistance)
-            probs['prob_to_quasi'] = 0.0
+            # Resistant cells can't gain or lose transient-resistance or gain more resistance (permanent resistance)
+            probs['prob_to_transient'] = 0.0
             probs['prob_to_sensitive'] = 0.0
             probs['prob_to_resistant'] = 0.0
         
         # Rebalance birth probability after zeroing impossible transitions
         # Birth probability is the remainder after all other events
-        probs['prob_birth'] = 1.0 - probs['prob_idle'] - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_quasi'] - probs['prob_to_resistant'] - probs['prob_to_sensitive']
+        probs['prob_birth'] = 1.0 - probs['prob_idle'] - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_transient'] - probs['prob_to_resistant'] - probs['prob_to_sensitive']
         
         # Get drug concentrations
         conc1, conc2 = self.get_drug_concentration()
@@ -354,14 +361,14 @@ class Treatment:
             if cell_type == "S":
                 probs = self._apply_treatment_to_sensitive(probs, conc1, conc2)
             elif cell_type == "Q":
-                probs = self._apply_treatment_to_quasi(probs, conc1, conc2)
+                probs = self._apply_treatment_to_transient(probs, conc1, conc2)
             elif cell_type == "R":
                 probs = self._apply_treatment_to_resistant(probs, conc1, conc2)
         
         # Apply penalty if enabled and no treatment
         if self.penalty_enabled and not self.treatment_active:
             if cell_type in ["Q", "R"]:
-                probs = self._apply_penalty(probs, cell_type, conc1)
+                probs = self._apply_penalty(probs)
    
         # Only normalize if treatment was applied (base probs already normalized)
         if self.treatment_active or (self.penalty_enabled and not self.treatment_active and cell_type in ["Q", "R"]):
@@ -380,14 +387,16 @@ class Treatment:
     ) -> Dict[str, float]:
         """Apply primary and secondary therapy effects to sensitive cells."""
         
-        # Primary therapy effect
-        if self.drug_type == DrugType.ABSOLUTE:
-            # Absolute drug: death rate moves toward treat_amt
+        # Primary therapy effect based on kill mechanism
+        if self.kill_mechanism == KillMechanism.KBE:
+            # Kill by Exposure: death rate moves toward treat_amt
+            # Pd = Pd + (KillStrength - Pd) * Concentration
             probs['prob_death'] = probs['prob_death'] + (self.treat_amt - probs['prob_death']) * conc1
-            probs['prob_birth'] = 1 - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_quasi'] - probs['prob_to_resistant'] - probs['prob_idle'] - probs['prob_to_sensitive']
+            probs['prob_birth'] = 1 - probs['prob_death'] - probs['prob_mutation'] - probs['prob_to_transient'] - probs['prob_to_resistant'] - probs['prob_idle'] - probs['prob_to_sensitive']
         
-        elif self.drug_type == DrugType.PROPORTIONAL:
-            # Proportional drug: death increases based on growth rate
+        elif self.kill_mechanism == KillMechanism.KOD:
+            # Kill on Division: death increases based on growth rate
+            # effect = min((Pb-Pd)*3*concentration, 0.9*Pb)
             diff = min(((probs['prob_birth'] - probs['prob_death']) * 3 * conc1), 0.9 * probs['prob_birth'])
             probs['prob_birth'] = probs['prob_birth'] - diff
             probs['prob_death'] = probs['prob_death'] + diff
@@ -395,18 +404,18 @@ class Treatment:
         # Secondary therapy (plasticity modulation)
         if self.secondary_active and conc2 > 0:
             # Increase quiescence, decrease resistance acquisition
-            probs['prob_idle'] = probs['prob_idle'] + probs['prob_to_quasi'] * conc2
-            probs['prob_to_quasi'] = probs['prob_to_quasi'] - probs['prob_to_quasi'] * conc2
+            probs['prob_idle'] = probs['prob_idle'] + probs['prob_to_transient'] * conc2
+            probs['prob_to_transient'] = probs['prob_to_transient'] - probs['prob_to_transient'] * conc2
         
         return probs
     
-    def _apply_treatment_to_quasi(
+    def _apply_treatment_to_transient(
         self,
         probs: Dict[str, float],
         conc1: float,
         conc2: float
     ) -> Dict[str, float]:
-        """Apply primary and secondary therapy effects to quasi-resistant cells."""
+        """Apply primary and secondary therapy effects to transient-resistant cells."""
         
         # Primary therapy: partial protection via penalty amount
         diff = (probs['prob_birth'] - probs['prob_death']) * conc1
@@ -417,7 +426,7 @@ class Treatment:
         if self.secondary_active and conc2 > 0:
             if self.secondary_therapy_type == "plast":
                 # Type A: force out of quiescence, increase reversion to sensitive
-                # Note: prob_to_quasi is already 0 for Q cells, so we work with prob_to_sensitive instead
+                # Note: prob_to_transient is already 0 for Q cells, so we work with prob_to_sensitive instead
                 prob_to_sensitive_boost = 2 * self.base_q * conc2
                 probs['prob_idle'] = max(0, probs['prob_idle'] - prob_to_sensitive_boost)
                 probs['prob_to_sensitive'] = probs['prob_to_sensitive'] + prob_to_sensitive_boost
@@ -449,12 +458,10 @@ class Treatment:
     
     def _apply_penalty(
         self,
-        probs: Dict[str, float],
-        cell_type: str,
-        conc1: float
+        probs: Dict[str, float]
     ) -> Dict[str, float]:
-        """Apply fitness penalty to resistant/quasi cells without treatment."""
-        diff = (probs['prob_birth'] - probs['prob_death']) * conc1
+        """Apply fitness penalty to resistant/transient cells without treatment."""
+        diff = (probs['prob_birth'] - probs['prob_death'])
         probs['prob_birth'] = probs['prob_birth'] - diff / (self.pen_amt + 1)
         probs['prob_death'] = probs['prob_death'] + diff / (self.pen_amt + 1)
         return probs

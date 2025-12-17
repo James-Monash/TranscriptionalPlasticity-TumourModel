@@ -1,0 +1,23 @@
+{
+  "simulation": {
+    "initial_size": 1000,
+    "output_dir": "output",
+    "output_prefix": "testing12345",
+    "number_of_replicates": 5000,
+    "output": {
+      "save_consolidated_summary": false
+    }
+  },
+  "biological_parameters": {
+    "s": 0.001,
+    "m": 6.18e-07,
+    "q": 1e-06,
+    "r": 1e-08,
+    "l": 1e-04,
+    "idle": 0.1
+  },
+  "treatment": {
+    "schedule_type": "off"
+  },
+  "use_multiprocessing": true
+}

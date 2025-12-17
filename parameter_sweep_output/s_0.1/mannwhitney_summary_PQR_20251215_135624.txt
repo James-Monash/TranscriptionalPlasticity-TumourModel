@@ -1,0 +1,22 @@
+Mann-Whitney U Test Comparison
+============================================================
+
+File 1: parameter_sweep_output\s_0.1\parameter_sweep_results_s0.1_PQR_penalty_off_20251215_132353.csv
+File 2: parameter_sweep_output\s_0.1\parameter_sweep_results_s0.1_PQR_penalty_on_20251215_132253.csv
+
+Mode: PQR
+Number of parameter combinations: 4936
+
+Summary Statistics:
+  File 1:
+    Mean:   0.6860
+    Median: 0.9762
+    Std:    0.4048
+  File 2:
+    Mean:   0.6907
+    Median: 0.9707
+    Std:    0.3982
+
+Test Results:
+  U-statistic: 12244454.00
+  P-value: 0.659269

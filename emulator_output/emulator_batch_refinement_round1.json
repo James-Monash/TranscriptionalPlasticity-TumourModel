@@ -1,0 +1,110 @@
+{
+  "simulation": {
+    "output_dir": "./emulator_output",
+    "output_prefix": "emulator_batch_refinement_round1"
+  },
+  "simulations": [
+    {
+      "biological_parameters": {
+        "s": 0.004264291806881862,
+        "m": 9.13023162245041e-06,
+        "q": 9.619024122987274e-11,
+        "r": 6.469103985749213e-11,
+        "l": 1.1770609167084218e-10,
+        "idle": 0.28135597520251787
+      },
+      "simulation": {
+        "initial_size": 1000,
+        "number_of_replicates": 100,
+        "output": {
+          "save_consolidated_summary": false
+        }
+      },
+      "treatment": {
+        "schedule_type": "off"
+      }
+    },
+    {
+      "biological_parameters": {
+        "s": 0.010460342029044788,
+        "m": 2.002307306520184e-06,
+        "q": 2.866143780494771e-10,
+        "r": 9.251690162315532e-11,
+        "l": 6.93978792629988e-06,
+        "idle": 0.20169904408345582
+      },
+      "simulation": {
+        "initial_size": 1000,
+        "number_of_replicates": 100,
+        "output": {
+          "save_consolidated_summary": false
+        }
+      },
+      "treatment": {
+        "schedule_type": "off"
+      }
+    },
+    {
+      "biological_parameters": {
+        "s": 0.010499975329902591,
+        "m": 7.975157676543696e-06,
+        "q": 2.5981880625653828e-11,
+        "r": 2.6547409877245925e-08,
+        "l": 0.004095081753531569,
+        "idle": 0.45631664056350024
+      },
+      "simulation": {
+        "initial_size": 1000,
+        "number_of_replicates": 100,
+        "output": {
+          "save_consolidated_summary": false
+        }
+      },
+      "treatment": {
+        "schedule_type": "off"
+      }
+    },
+    {
+      "biological_parameters": {
+        "s": 0.0017967759315796646,
+        "m": 1.9409712883397828e-06,
+        "q": 1.9693914629167805e-06,
+        "r": 3.4580595080046294e-07,
+        "l": 0.00011892543776878032,
+        "idle": 0.22950384599187537
+      },
+      "simulation": {
+        "initial_size": 1000,
+        "number_of_replicates": 100,
+        "output": {
+          "save_consolidated_summary": false
+        }
+      },
+      "treatment": {
+        "schedule_type": "off"
+      }
+    },
+    {
+      "biological_parameters": {
+        "s": 0.011258741844475863,
+        "m": 6.093433057705415e-07,
+        "q": 7.453367426775426e-10,
+        "r": 2.67388086244559e-07,
+        "l": 0.0030804228925779683,
+        "idle": 0.07237753903390975
+      },
+      "simulation": {
+        "initial_size": 1000,
+        "number_of_replicates": 100,
+        "output": {
+          "save_consolidated_summary": false
+        }
+      },
+      "treatment": {
+        "schedule_type": "off"
+      }
+    }
+  ],
+  "use_multiprocessing": true,
+  "account_for_extinctions": true
+}

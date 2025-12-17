@@ -58,6 +58,7 @@ from tumour_simulation import TumourSimulation
 
 # Create custom config
 config = {
+    "use_multiprocessing": True,
     "simulation": {
         "generations": 5000,
         "initial_size": 1,
@@ -67,8 +68,7 @@ config = {
         "output_prefix": "my_simulation",
         "seed": 42,
         "enable_live_plot": False,
-        "number_of_replicates": 1,
-        "use_multiprocessing": True
+        "number_of_replicates": 1
     },
     "biological_parameters": {
         "s": 0.01,

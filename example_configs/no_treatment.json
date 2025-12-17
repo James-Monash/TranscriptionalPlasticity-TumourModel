@@ -1,26 +1,23 @@
 {
   "simulation": {
-    "generations": 10000,
-    "initial_size": 5,
-    "output_dir": "./output",
-    "output_prefix": "no_treatment",
-    "track_history": false
+    "initial_size": 1000,
+    "output_dir": "output",
+    "output_prefix": "testing12345",
+    "number_of_replicates": 10000,
+    "output": {
+      "save_consolidated_summary": false
+    }
   },
   "biological_parameters": {
-    "s": 0.1,
-    "m": 5.71e-07,
-    "q": 0.000001,
-    "r": 0.000001,
-    "l": 0.000001,
+    "s": 0.01,
+    "m": 6.18e-07,
+    "q": 1e-06,
+    "r": 1e-08,
+    "l": 1e-04,
     "idle": 0.1
   },
   "treatment": {
-    "schedule_type": "off",
-    "drug_type": "abs",
-    "treat_amt": 0.8,
-    "pen_amt": 4.0,
-    "dose_duration": 24,
-    "penalty": true,
-    "secondary_therapy": false
-  }
+    "schedule_type": "off"
+  },
+  "use_multiprocessing": true
 }

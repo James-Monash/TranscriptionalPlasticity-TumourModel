@@ -75,9 +75,9 @@ class TumourSimulation:
         self.replicate_number = replicate_number
         
         # Extract simulation parameters
-        self.generations = self.config['simulation']['generations']
+        self.generations = self.config['simulation'].get('generations', 1000000)  # Default to very large number if not specified
         self.initial_size = self.config['simulation']['initial_size']
-        self.initial_quasi = self.config['simulation'].get('initial_quasi', 0)
+        self.initial_transient = self.config['simulation'].get('initial_transient', 0)
         self.initial_resistant = self.config['simulation'].get('initial_resistant', 0)
         self.output_dir = self.config['simulation'].get('output_dir', './output')
         self.output_prefix = self.config['simulation'].get('output_prefix', 'simulation')
@@ -152,10 +152,10 @@ class TumourSimulation:
             'birth': 0,
             'death': 0,
             'mutation': 0,
-            'S_to_Q': 0,  # Sensitive to quasi-resistant
+            'S_to_Q': 0,  # Sensitive to transient-resistant
             'S_to_R': 0,  # Sensitive to resistant
-            'Q_to_S': 0,  # Quasi to sensitive (reversion)
-            'Q_to_R': 0,  # Quasi to resistant
+            'Q_to_S': 0,  # Transient to sensitive (reversion)
+            'Q_to_R': 0,  # Transient to resistant
         }
         # Track which cells could have taken each action
         self.event_opportunities = {
@@ -178,7 +178,7 @@ class TumourSimulation:
             'generations': [],
             'total_population': [],
             'resistant_population': [],
-            'quasi_population': []
+            'transient_population': []
         }
         self.fig = None
         self.ax = None
@@ -210,7 +210,7 @@ class TumourSimulation:
             parent_type="Sens",
             generation=0,
             n_sensitive=self.initial_size,
-            n_quasi=self.initial_quasi,
+            n_transient=self.initial_transient,
             n_resistant=self.initial_resistant,
             n_driver_mutations=1
         )
@@ -242,7 +242,7 @@ class TumourSimulation:
                 self.plot_data['total_population'].append(tumor_size)
                 self.plot_data['resistant_population'].append(self.clones.get_total_resistant())
                 counts = self.clones.get_total_by_type()
-                self.plot_data['quasi_population'].append(counts['quasi'])
+                self.plot_data['transient_population'].append(counts['transient'])
             
             #print(tumor_size)
             if tumor_size == 0:
@@ -281,7 +281,7 @@ class TumourSimulation:
                 #counts = self.clones.get_total_by_type()
                 #mutation_rate = (self.total_driver_mutations / self.total_cell_events * 100) if self.total_cell_events > 0 else 0
                 #print(f"Gen {generation}: Total={counts['total']:.2e}, "
-                      #f"S={counts['sensitive']:.2e}, Q={counts['quasi']:.2e}, "
+                      #f"S={counts['sensitive']:.2e}, Q={counts['transient']:.2e}, "
                       #f"R={counts['resistant']:.2e}, Clones={len(self.clones)}, "
                       #f"Mutations={self.total_driver_mutations:,}/{self.total_cell_events:,} ({mutation_rate:.4f}%)")
         
@@ -331,7 +331,7 @@ class TumourSimulation:
         # Need list() to create snapshot since new clones are added during iteration
         for clone in list(self.clones.clones.values()):
             #print(f'The total number of cells is {self.clones.get_total_cells()}')
-            #print(f"\nClone ID {clone.clone_id} (Gen {clone.generation}): S={clone.n_sensitive}, Q={clone.n_quasi}, R={clone.n_resistant}")
+            #print(f"\nClone ID {clone.clone_id} (Gen {clone.generation}): S={clone.n_sensitive}, Q={clone.n_transient}, R={clone.n_resistant}")
             
             # Initialize delta dictionaries
             deltas_s = {'net_change': 0, 'births': 0, 'deaths': 0, 'mutations': 0, 'transition_q': 0, 'transition_r': 0}
@@ -353,13 +353,13 @@ class TumourSimulation:
                 #self._print_event_statistics()
                 new_clones.extend(mutations_s)
             
-            # Simulate quasi-resistant cells
-            if clone.n_quasi > 0:
+            # Simulate transient-resistant cells
+            if clone.n_transient > 0:
                 probs_q = self.probability_cache.get((k, "Q"))
-                #print("  Quasi cell probabilities:")
+                #print("  Transient cell probabilities:")
                 #pprint.pprint(probs_q)
                 deltas_q, mutations_q = self._simulate_cell_population(
-                    clone, "Q", clone.n_quasi, probs_q
+                    clone, "Q", clone.n_transient, probs_q
                 )
                 #print(f"    Q deltas: {deltas_q}")
                 #self._print_event_statistics()
@@ -384,26 +384,26 @@ class TumourSimulation:
             # Update counts for each type (births - deaths - mutations that left this type)
             clone.update_counts(
                 delta_sensitive=deltas_s['net_change'],
-                delta_quasi=deltas_q['net_change'],
+                delta_transient=deltas_q['net_change'],
                 delta_resistant=deltas_r['net_change']
             )
             
             # Apply state transitions
             # S -> Q and S -> R transitions
             clone.n_sensitive -= (deltas_s['transition_q'] + deltas_s['transition_r'])
-            clone.n_quasi += deltas_s['transition_q']
+            clone.n_transient += deltas_s['transition_q']
             clone.n_resistant += deltas_s['transition_r']
             
             # Q -> S (reversion) and Q -> R transitions
             # Note: for Q cells, transition_q means reversion to S
-            clone.n_quasi -= (deltas_q['transition_q'] + deltas_q['transition_r'])
+            clone.n_transient -= (deltas_q['transition_q'] + deltas_q['transition_r'])
             clone.n_sensitive += deltas_q['transition_q']
             clone.n_resistant += deltas_q['transition_r']
             
             # R cells have no transitions (transition_q and transition_r are always 0)
             
             # Show updated cell counts after all events
-            #print(f"  Updated: S={clone.n_sensitive}, Q={clone.n_quasi}, R={clone.n_resistant}")
+            #print(f"  Updated: S={clone.n_sensitive}, Q={clone.n_transient}, R={clone.n_resistant}")
             
         # Add newly created clones
         for new_clone in new_clones:
@@ -440,12 +440,12 @@ class TumourSimulation:
         # Sample cell fates using multinomial distribution
         # Outcomes: idle, birth, death, mutation, transitions
         # Note: transition probabilities depend on cell type:
-        #   S cells: can gain Q or R (prob_to_quasi, prob_to_resistant)
+        #   S cells: can gain Q or R (prob_to_transient, prob_to_resistant)
         #   Q cells: can revert to S or gain R (prob_to_sensitive, prob_to_resistant)
         #   R cells: no transitions (all transition probs are 0)
         
         if cell_type == "S":
-            transition_prob_1 = probs['prob_to_quasi']      # S -> Q
+            transition_prob_1 = probs['prob_to_transient']  # S -> Q
             transition_prob_2 = probs['prob_to_resistant']  # S -> R
         elif cell_type == "Q":
             transition_prob_1 = probs['prob_to_sensitive']  # Q -> S
@@ -519,7 +519,7 @@ class TumourSimulation:
                     parent_type=cell_type,
                     generation=self.current_generation,
                     n_sensitive=1 if cell_type == "S" else 0,
-                    n_quasi=1 if cell_type == "Q" else 0,
+                    n_transient=1 if cell_type == "Q" else 0,
                     n_resistant=1 if cell_type == "R" else 0,
                     n_driver_mutations=clone.n_driver_mutations + 1
                 )
@@ -542,7 +542,7 @@ class TumourSimulation:
         Apply phenotypic state transitions between S, Q, R within a clone.
         
         This handles transitions like:
-        - S -> Q (acquire quasi-resistance)
+        - S -> Q (acquire transient-resistance)
         - S -> R (acquire full resistance)
         - Q -> S (revert to sensitive)
         - Q -> R (acquire full resistance)
@@ -560,20 +560,20 @@ class TumourSimulation:
         
         # S -> Q transitions
         if clone.n_sensitive > 0:
-            n_s_to_q = int(rng.binomial(clone.n_sensitive, probs_s['prob_to_quasi']))
+            n_s_to_q = int(rng.binomial(clone.n_sensitive, probs_s['prob_to_transient']))
             n_s_to_r = int(rng.binomial(clone.n_sensitive - n_s_to_q, probs_s['prob_to_resistant']))
             
             clone.n_sensitive -= (n_s_to_q + n_s_to_r)
-            clone.n_quasi += n_s_to_q
+            clone.n_transient += n_s_to_q
             clone.n_resistant += n_s_to_r
         
         # Q -> S (reversion) and Q -> R transitions
-        if clone.n_quasi > 0:
-            # Note: probs_q['prob_to_sensitive'] represents reversion rate for quasi cells
-            n_q_to_s = int(rng.binomial(clone.n_quasi, probs_q['prob_to_sensitive']))
-            n_q_to_r = int(rng.binomial(clone.n_quasi - n_q_to_s, probs_q['prob_to_resistant']))
+        if clone.n_transient > 0:
+            # Note: probs_q['prob_to_sensitive'] represents reversion rate for transient cells
+            n_q_to_s = int(rng.binomial(clone.n_transient, probs_q['prob_to_sensitive']))
+            n_q_to_r = int(rng.binomial(clone.n_transient - n_q_to_s, probs_q['prob_to_resistant']))
             
-            clone.n_quasi -= (n_q_to_s + n_q_to_r)
+            clone.n_transient -= (n_q_to_s + n_q_to_r)
             clone.n_sensitive += n_q_to_s
             clone.n_resistant += n_q_to_r
     
@@ -621,7 +621,7 @@ class TumourSimulation:
             'generation': self.current_generation,
             'total_cells': counts['total'],
             'sensitive': counts['sensitive'],
-            'quasi': counts['quasi'],
+            'transient': counts['transient'],
             'resistant': counts['resistant'],
             'n_clones': len(self.clones),
             'treatment_active': treatment_state['treatment_active'],
@@ -713,7 +713,7 @@ class TumourSimulation:
             'final_state': self.state,
             'final_total_cells': counts['total'],
             'final_sensitive': counts['sensitive'],
-            'final_quasi': counts['quasi'],
+            'final_transient': counts['transient'],
             'final_resistant': counts['resistant'],
             'final_n_clones': len(self.clones),
             'doses_given': treatment_state['doses_given'],
@@ -747,7 +747,7 @@ class TumourSimulation:
             'state': self.state,
             'total_cells': counts['total'],
             'sensitive_cells': counts['sensitive'],
-            'quasi_cells': counts['quasi'],
+            'transient_cells': counts['transient'],
             'resistant_cells': counts['resistant'],
             'n_clones': len(self.clones),
             'treatment_active': treatment_state['treatment_active'],
@@ -762,8 +762,8 @@ class TumourSimulation:
         plt.figure(figsize=(10, 6))
         plt.plot(self.plot_data['generations'], self.plot_data['total_population'], 
                 'b-', label='Total population', linewidth=2)
-        plt.plot(self.plot_data['generations'], self.plot_data['quasi_population'], 
-                'orange', label='Quasi-resistant cells', linewidth=2)
+        plt.plot(self.plot_data['generations'], self.plot_data['transient_population'], 
+                'orange', label='Transient-resistant cells', linewidth=2)
         plt.plot(self.plot_data['generations'], self.plot_data['resistant_population'], 
                 'r-', label='Resistant cells', linewidth=2)
         plt.xlabel('Generation', fontsize=12)
@@ -804,13 +804,13 @@ class TumourSimulation:
             # Final cell counts
             'final_total_cells': counts['total'],
             'final_sensitive': counts['sensitive'],
-            'final_quasi': counts['quasi'],
+            'final_transient': counts['transient'],
             'final_resistant': counts['resistant'],
             'final_n_clones': len(self.clones),
             
             # Fractions
             'fraction_sensitive': counts['sensitive'] / counts['total'] if counts['total'] > 0 else 0,
-            'fraction_quasi': counts['quasi'] / counts['total'] if counts['total'] > 0 else 0,
+            'fraction_transient': counts['transient'] / counts['total'] if counts['total'] > 0 else 0,
             'fraction_resistant': counts['resistant'] / counts['total'] if counts['total'] > 0 else 0,
             
             # Treatment info
@@ -1034,7 +1034,40 @@ def _run_condition_until_target(config_path: str, sim_config: Dict, condition_in
     return successful_results, successful_summaries, stats
 
 
-def run_simulation_from_config(config_path: str, num_workers: Optional[int] = None, use_multiprocessing: bool = True) -> List[Tuple[int, pd.DataFrame]]:
+def _run_single_job(args):
+    """
+    Run a single simulation job (one replicate of one condition).
+    Must be at module level for pickling in multiprocessing.
+    
+    Parameters:
+    -----------
+    args : tuple
+        (config_path, condition_idx, replicate_idx, sim_config)
+    
+    Returns:
+    --------
+    tuple
+        (condition_idx, replicate_idx, state, dataframe, summary_dict)
+    """
+    config_path, condition_idx, replicate_idx, sim_config = args
+    
+    try:
+        # Run single simulation
+        sim = TumourSimulation(config_path, config_dict=sim_config, 
+                              condition_index=condition_idx, 
+                              replicate_number=replicate_idx)
+        state, results = sim.run()
+        summary = sim.get_final_summary_row()
+        
+        return condition_idx, replicate_idx, state, results, summary
+    except Exception as e:
+        print(f"Error in condition {condition_idx}, replicate {replicate_idx}: {e}")
+        import traceback
+        traceback.print_exc()
+        return condition_idx, replicate_idx, 'error', pd.DataFrame(), {}
+
+
+def run_simulation_from_config(config_path: str, num_workers: Optional[int] = None) -> List[Tuple[int, pd.DataFrame]]:
     """
     Convenience function to run simulation(s) from a config file.
     Supports both single and multiple initial conditions, with replicates.
@@ -1073,125 +1106,193 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
     save_consolidated = full_config.get('simulation', {}).get('output', {}).get('save_consolidated_summary', True) if 'simulation' in full_config else True
     output_columns = full_config.get('simulation', {}).get('output', {}).get('output_columns', None) if 'simulation' in full_config else None
     
-    # Check if config specifies use_multiprocessing (overrides function parameter)
-    config_use_mp = full_config.get('simulation', {}).get('use_multiprocessing', None) if 'simulation' in full_config else None
-    if config_use_mp is not None:
-        use_multiprocessing = config_use_mp
+    # Check if config specifies use_multiprocessing at global level 
+    use_multiprocessing = full_config.get('use_multiprocessing', True)  # Default to True
     
-    # Check if config has multiple conditions (simulations array) or single condition
+    # Check if we should account for extinctions when batching
+    account_for_extinctions = full_config.get('account_for_extinctions', True)  # Default to True for backward compatibility
+    
+    # Flatten ALL simulations (conditions + replicates) into a single job list
+    # This maximizes parallelization regardless of whether we have single/multi conditions
+    all_jobs_specs = []  # List of (condition_idx, target_successful, sim_config)
+    
     if 'simulations' in full_config:
-        # Multiple initial conditions - each simulation is a complete config
-        print(f"Found {len(full_config['simulations'])} initial conditions to simulate\n")
-        
-        for idx, sim_config in enumerate(full_config['simulations']):
+        # Multiple initial conditions
+        print(f"Found {len(full_config['simulations'])} initial conditions to simulate")
+        for condition_idx, sim_config in enumerate(full_config['simulations']):
             target_successful = sim_config['simulation'].get('number_of_replicates', 1)
-            print(f"\nCondition {idx + 1}: Running until {target_successful} successful simulation(s)")
-            if use_multiprocessing:
-                print(f"Using {num_workers} parallel workers")
-            else:
-                print(f"Running in SEQUENTIAL mode (no multiprocessing)")
+            all_jobs_specs.append((condition_idx, target_successful, sim_config))
+    else:
+        # Single initial condition
+        target_successful = full_config['simulation'].get('number_of_replicates', 1)
+        all_jobs_specs.append((None, target_successful, full_config))
+    
+    print(f"Multiprocessing: {'ENABLED' if use_multiprocessing else 'DISABLED'}")
+    print(f"Workers: {num_workers}")
+    print(f"Account for extinctions: {'YES' if account_for_extinctions else 'NO'}")
+    print("="*80)
+    
+    overall_start = datetime.now()
+    
+    if use_multiprocessing:
+        # MULTIPROCESSING PATH: Run all jobs with intelligent batching to handle extinctions
+        print(f"Running simulations in parallel with intelligent batching to handle extinctions")
+        print(f"Maximizing worker utilization with {num_workers} workers\n")
+        
+        # Get base seed if available
+        base_seed = None
+        if 'simulations' in full_config:
+            # For multi-condition, seed might be in first condition
+            base_seed = full_config['simulations'][0].get('simulation', {}).get('seed', None)
+        else:
+            base_seed = full_config.get('simulation', {}).get('seed', None)
+        
+        # Track overall progress
+        condition_successful = {idx: 0 for idx, _, _ in all_jobs_specs}
+        condition_target = {idx: target for idx, target, _ in all_jobs_specs}
+        condition_extinct = {idx: 0 for idx, _, _ in all_jobs_specs}
+        condition_total_attempts = {idx: 0 for idx, _, _ in all_jobs_specs}
+        
+        # Start worker pool once for all conditions
+        with Pool(processes=num_workers, initializer=_init_worker, initargs=(base_seed,)) as pool:
+            replicate_counter = {idx: 0 for idx, _, _ in all_jobs_specs}
+            last_milestone = 0  # Track last milestone for logging every 10 successful simulations
+            
+            # Keep running batches until all conditions have enough successful results
+            while any(condition_successful[idx] < condition_target[idx] for idx, _, _ in all_jobs_specs):
+                # Build batch of jobs for conditions that still need more successful results
+                batch_jobs = []
+                for condition_idx, target, sim_config in all_jobs_specs:
+                    # Stop adding jobs if batch is already full
+                    if len(batch_jobs) >= num_workers:
+                        break
+                    
+                    # How many more successful results does this condition need?
+                    needed = target - condition_successful[condition_idx]
+                    if needed <= 0:
+                        continue
+                    
+                    # Estimate extinction rate for this condition
+                    attempts = condition_total_attempts[condition_idx]
+                    extinct = condition_extinct[condition_idx]
+                    
+                    if account_for_extinctions:
+                        # Add buffer based on observed extinction rate
+                        if attempts > 0:
+                            extinction_rate = extinct / attempts
+                            # Add buffer based on extinction rate (run extra jobs to account for extinctions)
+                            buffer_multiplier = 1.5 if extinction_rate > 0.5 else 1.2 if extinction_rate > 0.2 else 1.1
+                            jobs_to_run = max(1, int(needed * buffer_multiplier))
+                        else:
+                            # First batch - run just what we need (or a bit more for extinction buffer)
+                            jobs_to_run = max(1, min(needed * 2, needed + 5))
+                    else:
+                        # Don't account for extinctions - only run exact number needed
+                        jobs_to_run = needed
+                    
+                    # Don't exceed remaining batch capacity
+                    remaining_capacity = num_workers - len(batch_jobs)
+                    jobs_to_run = min(jobs_to_run, remaining_capacity)
+                    
+                    # Create jobs for this condition
+                    for _ in range(jobs_to_run):
+                        replicate_idx = replicate_counter[condition_idx]
+                        replicate_counter[condition_idx] += 1
+                        batch_jobs.append((config_path, condition_idx, replicate_idx, sim_config))
+                
+                if not batch_jobs:
+                    break
+                
+                # Run batch in parallel
+                print(f"Running batch of {len(batch_jobs)} simulations...")
+                batch_results = pool.map(_run_single_job, batch_jobs)
+                
+                # Process results
+                for cond_idx, rep_idx, state, results_df, summary in batch_results:
+                    condition_total_attempts[cond_idx] += 1
+                    
+                    if state not in ['extinct', 'error']:
+                        # Only store if we haven't exceeded target for this condition
+                        if condition_successful[cond_idx] < condition_target[cond_idx]:
+                            all_results.append((state, results_df))
+                            all_summaries.append(summary)
+                            condition_successful[cond_idx] += 1
+                    elif state == 'extinct':
+                        condition_extinct[cond_idx] += 1
+                
+                # Progress update
+                total_successful = sum(condition_successful.values())
+                total_target = sum(condition_target.values())
+                total_attempts = sum(condition_total_attempts.values())
+                total_extinct = sum(condition_extinct.values())
+                
+                # Regular progress update after each batch
+                print(f"  Progress: {total_successful}/{total_target} successful ({total_attempts} total attempts, {total_extinct} extinct)")
+                        
+        # Create stats for each condition
+        for condition_idx, target, _ in all_jobs_specs:
+            all_stats.append({
+                'condition_index': condition_idx,
+                'successful': condition_successful[condition_idx],
+                'total_attempts': condition_total_attempts[condition_idx],
+                'extinct': condition_extinct[condition_idx],
+                'extinction_rate': (condition_extinct[condition_idx] / condition_total_attempts[condition_idx] 
+                                   if condition_total_attempts[condition_idx] > 0 else 0)
+            })
+        
+        overall_elapsed = (datetime.now() - overall_start).total_seconds()
+        print(f"\nAll simulations complete (elapsed: {overall_elapsed:.2f}s)")
+        print(f"Total successful: {len(all_results)}, Total extinct: {sum(condition_extinct.values())}, Total attempts: {sum(condition_total_attempts.values())}")
+    
+    else:
+        # SEQUENTIAL PATH: Run all jobs one by one
+        print(f"Running in SEQUENTIAL mode (no multiprocessing)\n")
+        
+        for condition_idx, target_successful, sim_config in all_jobs_specs:
+            print(f"\nCondition {condition_idx if condition_idx is not None else 'Single'}: Running until {target_successful} successful simulation(s)")
             print("="*80)
             
             condition_start = datetime.now()
-            if use_multiprocessing:
-                results, summaries, stats = _run_condition_until_target(
-                    config_path, sim_config, idx, target_successful, num_workers
-                )
-            else:
-                results, summaries, stats = _run_condition_until_target_sequential(
-                    config_path, sim_config, idx, target_successful
-                )
+            results, summaries, stats = _run_condition_until_target_sequential(
+                config_path, sim_config, condition_idx, target_successful
+            )
             all_results.extend(results)
             all_summaries.extend(summaries)
             all_stats.append({
-                'condition_index': idx,
+                'condition_index': condition_idx,
                 **stats
             })
             
             condition_elapsed = (datetime.now() - condition_start).total_seconds()
-            print(f"\nCondition {idx + 1} complete (elapsed: {condition_elapsed:.2f}s):")
+            print(f"\nCondition complete (elapsed: {condition_elapsed:.2f}s):")
             print(f"  Successful: {stats['successful']}")
             print(f"  Total attempts: {stats['total_attempts']}")
             print(f"  Extinct: {stats['extinct']}")
             print(f"  Extinction rate: {stats['extinction_rate']:.2%}")
-            
-            # Save consolidated summary for this condition if requested
-            if save_consolidated and summaries:
-                condition_output_dir = Path(sim_config['simulation'].get('output_dir', './output'))
-                condition_output_dir.mkdir(parents=True, exist_ok=True)
-                condition_prefix = sim_config['simulation'].get('output_prefix', f'condition{idx}')
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                summary_filename = f"{condition_prefix}_consolidated_summary_{timestamp}.csv"
-                summary_filepath = condition_output_dir / summary_filename
-                
-                summary_df = pd.DataFrame(summaries)
-                
-                # Filter columns if output_columns is specified
-                condition_output_columns = sim_config['simulation'].get('output', {}).get('output_columns', None)
-                if condition_output_columns is not None:
-                    # Keep only specified columns that exist in the dataframe
-                    available_columns = [col for col in condition_output_columns if col in summary_df.columns]
-                    if available_columns:
-                        summary_df = summary_df[available_columns]
-                    else:
-                        print(f"  Warning: None of the specified output_columns exist in summary data")
-                                
-                summary_df.to_csv(summary_filepath, index=False)
-                print(f"  Consolidated summary saved to: {summary_filepath}")
         
-    else:
-        # Single initial condition (legacy format)
-        target_successful = full_config['simulation'].get('number_of_replicates', 1)
-        print(f"Running until {target_successful} successful simulation(s)")
-        if use_multiprocessing:
-            print(f"Using {num_workers} parallel workers")
-        else:
-            print(f"Running in SEQUENTIAL mode (no multiprocessing)")
-        print("="*80)
+        overall_elapsed = (datetime.now() - overall_start).total_seconds()
+        print(f"\nAll simulations complete (elapsed: {overall_elapsed:.2f}s)")
+    
+    # Save consolidated summary if requested
+    if save_consolidated and all_summaries:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        summary_filename = f"{output_prefix}_consolidated_summary_{timestamp}.csv"
+        summary_filepath = output_dir / summary_filename
         
-        condition_start = datetime.now()
-        if use_multiprocessing:
-            results, summaries, stats = _run_condition_until_target(
-                config_path, full_config, None, target_successful, num_workers
-            )
-        else:
-            results, summaries, stats = _run_condition_until_target_sequential(
-                config_path, full_config, None, target_successful
-            )
-        all_results.extend(results)
-        all_summaries.extend(summaries)
-        all_stats.append({
-            'condition_index': None,
-            **stats
-        })
+        summary_df = pd.DataFrame(all_summaries)
         
-        condition_elapsed = (datetime.now() - condition_start).total_seconds()
-        print(f"\nSimulation complete (elapsed: {condition_elapsed:.2f}s):")
-        print(f"  Successful: {stats['successful']}")
-        print(f"  Total attempts: {stats['total_attempts']}")
-        print(f"  Extinct: {stats['extinct']}")
-        print(f"  Extinction rate: {stats['extinction_rate']:.2%}")
+        # Filter columns if output_columns is specified
+        if output_columns is not None:
+            # Keep only specified columns that exist in the dataframe
+            available_columns = [col for col in output_columns if col in summary_df.columns]
+            if available_columns:
+                summary_df = summary_df[available_columns]
+            else:
+                print(f"  Warning: None of the specified output_columns exist in summary data")
         
-        # Save consolidated summary if requested
-        if save_consolidated and summaries:
-            output_dir.mkdir(parents=True, exist_ok=True)
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            summary_filename = f"{output_prefix}_consolidated_summary_{timestamp}.csv"
-            summary_filepath = output_dir / summary_filename
-            
-            summary_df = pd.DataFrame(summaries)
-            
-            # Filter columns if output_columns is specified
-            if output_columns is not None:
-                # Keep only specified columns that exist in the dataframe
-                available_columns = [col for col in output_columns if col in summary_df.columns]
-                if available_columns:
-                    summary_df = summary_df[available_columns]
-                else:
-                    print(f"  Warning: None of the specified output_columns exist in summary data")
-            
-            summary_df.to_csv(summary_filepath, index=False)
-            print(f"  Consolidated summary saved to: {summary_filepath}")
+        summary_df.to_csv(summary_filepath, index=False)
+        print(f"\nConsolidated summary saved to: {summary_filepath}")
     
     # Store stats and summaries for later access
     run_simulation_from_config.last_run_stats = all_stats
