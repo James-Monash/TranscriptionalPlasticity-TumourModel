@@ -251,6 +251,7 @@ class TumourSimulation:
             
             # Check if tumor has reached relapse size
             if tumor_size >= self.treatment.relapse_size:
+                print(generation)
                 self.state = 'relapsed'
                 break
             
@@ -1302,6 +1303,7 @@ def run_simulation_from_config(config_path: str, num_workers: Optional[int] = No
 
 
 if __name__ == "__main__":
+
     import sys
 
     if len(sys.argv) < 2:

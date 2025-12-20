@@ -8,8 +8,8 @@
         "number_of_replicates": 1,
         "use_multiprocessing": true,
         "output": {
-            "save_individual_csvs": false,
-            "save_summary_json": false,
+            "save_individual_csvs": true,
+            "save_summary_json": true,
             "save_consolidated_summary": true,
             "output_columns": ["fraction_quasi"]
         }
@@ -30,5 +30,6 @@
         "dose_duration": 0,
         "penalty": false,
         "secondary_therapy": false
-    }
+    },
+    "use_multiprocessing": false
 }
