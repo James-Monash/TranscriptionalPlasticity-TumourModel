@@ -1,0 +1,2 @@
+condition_index,replicate_number,final_generation,final_state,final_total_cells,final_sensitive,final_transient,final_resistant,fraction_sensitive,fraction_transient,fraction_resistant,doses_given,mutation_rate
+0,0,13429,relapsed,4008952446,288382803,5486191,3715083452,0.0719347,0.00136848,0.926697,0,2.13527e-06

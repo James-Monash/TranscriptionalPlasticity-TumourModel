@@ -3,24 +3,23 @@
         "generations": 100000,
         "initial_size": 1000,
         "output_dir": "./output",
-        "output_prefix": "s0.001_q1.8167e-07_l9.08e-04",
+        "output_prefix": "python_test_run",
         "track_history": false,
         "number_of_replicates": 1,
-        "use_multiprocessing": true,
         "output": {
-            "save_individual_csvs": true,
-            "save_summary_json": true,
+            "save_individual_csvs": false,
+            "save_summary_json": false,
             "save_consolidated_summary": true,
             "output_columns": ["fraction_quasi"]
         }
     },
     "biological_parameters": {
-        "s": 0.001,
-        "m": 5.71e-07,
-        "q": 1.68e-07,
-        "r": 0,
-        "l": 8.4e-04,
-        "idle": 0.1
+        "s": 0.00116671,
+        "m": 3.33274e-06,
+        "q": 5.27722e-06,
+        "r": 1.87656e-05,
+        "l": 3.19948e-05,
+        "idle": 0.280068
     },
     "treatment": {
         "schedule_type": "off",
@@ -31,5 +30,5 @@
         "penalty": false,
         "secondary_therapy": false
     },
-    "use_multiprocessing": false
+    "use_multiprocessing": true
 }
